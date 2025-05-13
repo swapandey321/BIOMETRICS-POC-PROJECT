@@ -1,0 +1,17 @@
+<div class="loginForm">
+    <div>
+        <h3>Biometric register / login PoC</h3>
+    </div>
+    <div>
+        <label>User Name</label>
+        <input type="text" [value]="credentials.userName" (input)="valueChanged($event, 'userName')">
+    </div>
+    <div>
+        <label>Password</label>
+        <input type="password" [value]="credentials.password" (input)="valueChanged($event, 'password')">
+    </div>
+    <div class="buttonDiv">
+        <button mat-raised-button color="primary" (click)="setCredentials()">Set biometric</button>
+        <button mat-raised-button color="primary" (click)="showCredentials()">Get biometric</button>
+    </div>
+</div>
