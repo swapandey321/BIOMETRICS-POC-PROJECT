@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { BiomComponent } from './biom/biom.component';
+import { NewBiometricComponent } from './new.biometric/new.biometric.component';
 
 export const routes: Routes = [
-    { path: '', component: BiomComponent, pathMatch: 'full' }
+    { path: '', component: NewBiometricComponent, pathMatch: 'full' }
   ];

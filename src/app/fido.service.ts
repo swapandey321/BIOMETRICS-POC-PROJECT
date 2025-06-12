@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, map, Observable } from 'rxjs';
+import {registrationOptionData, authenticationOptionData} from './mockResponses';
 
 @Injectable({
   providedIn: 'root'
@@ -11,18 +12,16 @@ export class FidoService {
 
   // Step 1: Fetch registration options from backend
   async getRegistrationOptions(): Promise<PublicKeyCredentialCreationOptions> {
-    const response = this.http.post<PublicKeyCredentialCreationOptions>(
+    const responseObservable = this.http.post<PublicKeyCredentialCreationOptions>(
       'https://your-server.com/api/fido2/register-request',
       { username: 'user@example.com' }
-    ).pipe(
-      map(res => {
-        // Convert challenge and user.id from base64url to Uint8Array
-        res.challenge = this.base64urlToUint8Array(res.challenge as any);
-        res.user.id = this.base64urlToUint8Array(res.user.id as any);
-        return res;
-      })
     );
-    return firstValueFrom(response);
+    //const response = await firstValueFrom(responseObservable);
+    const response = registrationOptionData;
+    response.challenge = this.base64urlToUint8Array(response.challenge as any);
+    response.user.id = this.base64urlToUint8Array(response.user.id as any);
+
+    return response;
   }
 
   // Step 2: Send new credential to backend
@@ -53,10 +52,13 @@ export class FidoService {
 
   // Step 3: Fetch authentication options from backend
   async getAuthenticationOptions(): Promise<PublicKeyCredentialRequestOptions> {
-    const response = await firstValueFrom (this.http.post<PublicKeyCredentialRequestOptions>(
+    const responseObservable = this.http.post<PublicKeyCredentialRequestOptions>(
       'https://your-server.com/api/fido2/auth-request',
       { username: 'user@example.com' }
-    ));
+    );
+
+    //const response = await firstValueFrom(responseObservable);
+    const response = authenticationOptionData;
 
     // Convert challenge from base64url
     response.challenge = this.base64urlToUint8Array(response.challenge as any);
@@ -89,7 +91,7 @@ export class FidoService {
       }
     };
 
-    let response = await firstValueFrom(this.http.post('https://your-server.com/api/fido2/auth-response', assertionData)); // TODO response status
+    //let response = await firstValueFrom(this.http.post('https://your-server.com/api/fido2/auth-response', assertionData)); // TODO response status
   }
 
   async authenticateWithBiometrics(): Promise<void> {
