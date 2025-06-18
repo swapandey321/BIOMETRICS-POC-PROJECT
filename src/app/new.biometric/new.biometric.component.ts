@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { FidoService } from '../fido.service';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-new.biometric',
-  imports: [],
+  imports: [MatButtonModule],
   templateUrl: './new.biometric.component.html',
   styleUrl: './new.biometric.component.scss'
 })

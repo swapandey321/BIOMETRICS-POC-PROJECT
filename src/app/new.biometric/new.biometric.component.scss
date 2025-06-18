@@ -1,0 +1,12 @@
+div.mainDiv {
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    div.btnDiv {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+}

@@ -2,13 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, map, Observable } from 'rxjs';
 import {registrationOptionData, authenticationOptionData} from './mockResponses';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FidoService {
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, readonly snackBar: MatSnackBar) {}
 
   // Step 1: Fetch registration options from backend
   async getRegistrationOptions(): Promise<PublicKeyCredentialCreationOptions> {
@@ -18,8 +19,8 @@ export class FidoService {
     );
     //const response = await firstValueFrom(responseObservable);
     const response = registrationOptionData;
-    response.challenge = this.base64urlToUint8Array(response.challenge as any);
-    response.user.id = this.base64urlToUint8Array(response.user.id as any);
+    //response.challenge = this.base64urlToUint8Array(response.challenge as any);
+    //response.user.id = this.base64urlToUint8Array(response.user.id as any);
 
     return response;
   }
@@ -39,15 +40,20 @@ export class FidoService {
       }
     };
 
-    return await firstValueFrom(this.http.post('https://your-server.com/api/fido2/register-response', credentialData));
+    //return await firstValueFrom(this.http.post('https://your-server.com/api/fido2/register-response', credentialData));
   }
 
   async registerWithBiometrics(): Promise<void> {
-    const options = await this.getRegistrationOptions();
-    
-    const credential = await navigator.credentials.create({ publicKey: options });
-    let response = await this.sendRegistrationResult(credential!);//TODO Response status code 
-    console.log('✅ Registration successful');
+    try {
+      const options = await this.getRegistrationOptions();
+      const credential = await navigator.credentials.create({ publicKey: options });
+      this.openSnackBar("After creds", "close");
+      let response = await this.sendRegistrationResult(credential!);//TODO Response status code 
+      console.log('✅ Registration successful');
+    }
+    catch(e: any) {
+      this.openSnackBar(`Error on navigator.credentials.create errorname: ${e.name} errorMessage: ${e.message}`, "close");
+    }
   }
 
   // Step 3: Fetch authentication options from backend
@@ -113,5 +119,11 @@ export class FidoService {
   uint8ArrayToBase64url(buffer: Uint8Array): string {
     const base64 = btoa(String.fromCharCode(...buffer));
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  openSnackBar(message: string, action: string) {
+    this.snackBar.open(message, action, {
+      duration: 4000,
+      panelClass: 'my-custom-snackbar'
+    });
   }
 }
