@@ -1,11 +1,11 @@
-export const registrationOptionData: PublicKeyCredentialCreationOptions = {
-  challenge: new TextEncoder().encode("7LCCBzLf_XTx27OTq1MdiQ"), // base64url-encoded
+export const registrationOptionData: any = {
+  challenge: "ABCD34123265DEF34qwew4dgesfi", // to be base64url-encoded
   rp: {
     name: "My App",
-    id: "localhost"
+    id: "fido.android.com"
   },
   user: {
-    id: new TextEncoder().encode("YWxpY2VAZXhhbXBsZS5jb20yOnV1aWQtMTIzNDU="), // base64url(userId + deviceId)
+    id: "alice@example.com:uuid-1234", // to be base64url(userId + deviceId)
     name: "alice@example.com:uuid-1234",
     displayName: "Alice's Pixel 7"
   },
@@ -27,6 +27,7 @@ export const registrationOptionData: PublicKeyCredentialCreationOptions = {
   //   }
   // ],
   extensions: {
+    appid: true,
     credProps: true // optional, for learning if it's discoverable
   }
 };

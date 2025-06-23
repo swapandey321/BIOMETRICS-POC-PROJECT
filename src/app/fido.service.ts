@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, map, Observable } from 'rxjs';
+import  Fido  from './plugins/fido-plugin';
 import {registrationOptionData, authenticationOptionData} from './mockResponses';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -12,13 +13,15 @@ export class FidoService {
   constructor(private http: HttpClient, readonly snackBar: MatSnackBar) {}
 
   // Step 1: Fetch registration options from backend
-  async getRegistrationOptions(): Promise<PublicKeyCredentialCreationOptions> {
-    const responseObservable = this.http.post<PublicKeyCredentialCreationOptions>(
+  async getRegistrationOptions(): Promise<any> {
+    const responseObservable = this.http.post<any>(
       'https://your-server.com/api/fido2/register-request',
       { username: 'user@example.com' }
     );
     //const response = await firstValueFrom(responseObservable);
     const response = registrationOptionData;
+    response.challenge = this.uint8ArrayToBase64url(new TextEncoder().encode(response.challenge));
+    response.user.id = this.uint8ArrayToBase64url(new TextEncoder().encode(response.user.id));
     //response.challenge = this.base64urlToUint8Array(response.challenge as any);
     //response.user.id = this.base64urlToUint8Array(response.user.id as any);
 
@@ -46,9 +49,12 @@ export class FidoService {
   async registerWithBiometrics(): Promise<void> {
     try {
       const options = await this.getRegistrationOptions();
-      const credential = await navigator.credentials.create({ publicKey: options });
+      //const credential = await navigator.credentials.create({ publicKey: options });
+      const result = await Fido.register({
+        credentialJson: options,
+      });
       this.openSnackBar("After creds", "close");
-      let response = await this.sendRegistrationResult(credential!);//TODO Response status code 
+      //let response = await this.sendRegistrationResult(result!);//TODO Response status code 
       console.log('✅ Registration successful');
     }
     catch(e: any) {
