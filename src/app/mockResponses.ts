@@ -2,7 +2,7 @@ export const registrationOptionData: any = {
   challenge: "ABCD34123265DEF34qwew4dgesfi", // to be base64url-encoded
   rp: {
     name: "My App",
-    id: "fido.android.com"
+    id: "swapandey321.github.io"
   },
   user: {
     id: "alice@example.com:uuid-1234", // to be base64url(userId + deviceId)
@@ -26,10 +26,10 @@ export const registrationOptionData: any = {
   //     type: "public-key"
   //   }
   // ],
-  extensions: {
-    appid: true,
-    credProps: true // optional, for learning if it's discoverable
-  }
+  // extensions: {
+  //   appid: true,
+  //   credProps: true // optional, for learning if it's discoverable
+  // }
 };
 
 export const authenticationOptionData: PublicKeyCredentialRequestOptions = {

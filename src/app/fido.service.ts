@@ -53,7 +53,7 @@ export class FidoService {
       const result = await Fido.register({
         credentialJson: options,
       });
-      this.openSnackBar("After creds", "close");
+      alert(`After creds :: ${JSON.stringify(result)}`);
       //let response = await this.sendRegistrationResult(result!);//TODO Response status code 
       console.log('✅ Registration successful');
     }

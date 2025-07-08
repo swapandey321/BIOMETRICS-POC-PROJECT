@@ -64,7 +64,7 @@ public class FidoPluginPoc extends Plugin {
           @Override
           public void onResult(CreateCredentialResponse result) {
             try {
-              String credentialJson = result.getData().getString("androidx.credentials.BUNDLE_KEY_CREDENTIAL_JSON");
+              String credentialJson = result.getData().getString("androidx.credentials.BUNDLE_KEY_REGISTRATION_RESPONSE_JSON");
 
               if (credentialJson == null) {
                 call.reject("Credential JSON is null");
