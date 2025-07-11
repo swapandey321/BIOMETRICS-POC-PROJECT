@@ -46,6 +46,8 @@ public class FidoPluginPoc extends Plugin {
   public void register(PluginCall call) {
     var data = call.getObject("credentialJson");
     if (data == null) {
+      System.out.println("data");
+System.out.print(data);
       call.reject("Missing server data");
       return;
     }
@@ -71,6 +73,7 @@ public class FidoPluginPoc extends Plugin {
                 return;
               }
 
+              
               JSObject jsResult = new JSObject();
               jsResult.put("credentialJson", credentialJson);
               call.resolve(jsResult);
