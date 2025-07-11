@@ -1,0 +1,8 @@
+<div class="mainDiv">
+    <h1>Biometric Authentication with FIDO2</h1>
+    <div class="btnDiv">
+        <input type="text" [(ngModel)]="email" />
+        <button mat-raised-button color="primary" (click)="register(email)">Register with Biometrics</button>
+        <button mat-raised-button color="primary" (click)="authenticate(email)">Authenticate with Biometrics</button>
+    </div>
+</div>
