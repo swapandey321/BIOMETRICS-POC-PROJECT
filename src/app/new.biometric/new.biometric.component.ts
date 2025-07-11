@@ -1,24 +1,27 @@
 import { Component } from '@angular/core';
 import { FidoService } from '../fido.service';
 import { MatButtonModule } from '@angular/material/button';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-new.biometric',
-  imports: [MatButtonModule],
+  imports: [MatButtonModule,FormsModule],
   templateUrl: './new.biometric.component.html',
   styleUrl: './new.biometric.component.scss'
 })
 export class NewBiometricComponent {
   constructor(private fidoService: FidoService) {}
 
-  register() {
-    this.fidoService.registerWithBiometrics().catch(err => {
+  email: string = '';
+
+  register(email: string) {
+    this.fidoService.registerWithBiometrics(email).catch(err => {
       console.error('Registration failed', err);
     });
   }
 
-  authenticate() {
-    this.fidoService.authenticateWithBiometrics().catch(err => {
+  authenticate(email: string) {
+    this.fidoService.authenticateWithBiometrics(email).catch(err => {
       console.error('Authentication failed', err);
     });
   }
