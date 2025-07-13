@@ -5,20 +5,28 @@ import  Fido  from './plugins/fido-plugin';
 import {registrationOptionData, authenticationOptionData} from './mockResponses';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import FidoAuthPlugin from './plugins/fido-auth-plugin';
+import { Http } from '@capacitor-community/http';
+import { arrayBufferToBase64url } from './utils/webauthn';
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class FidoService {
+  
 
-  constructor(private http: HttpClient, readonly snackBar: MatSnackBar) {}
+  constructor(private http: HttpClient, readonly snackBar: MatSnackBar) {
+    
+  }
+
+   SERVER_URL = "https://01eba62eb93c.ngrok-free.app";
 
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend
   async getRegistrationOptions(email: string): Promise<any> {
-  const SERVER_URL = "https://c4d8c7d35a88.ngrok-free.app";
+  
  const responseObservable = await fetch(
-   `${SERVER_URL}/init-register?email=${email}`,
+   `${this.SERVER_URL}/init-register?email=${email}`,
    { credentials: "include" ,
     headers: {
       "ngrok-skip-browser-warning": "true",
@@ -41,17 +49,9 @@ export class FidoService {
  return options;
   }
 
-  bufferToBase64url(buffer: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-
   // Step 2: Send new credential to backend
   async sendRegistrationResult(credential: Credential) {
-    const SERVER_URL = "https://c4d8c7d35a88.ngrok-free.app";
+    
     const publicKeyCredential = credential as PublicKeyCredential;
     console.log('publicKeyCredential'+JSON.stringify(publicKeyCredential))
     const attestationResponse = publicKeyCredential.response as AuthenticatorAttestationResponse;
@@ -73,7 +73,7 @@ console.log('attestationResponse'+JSON.stringify(attestationResponse))
     console.log('clientDataJSON'+credentialData.response.clientDataJSON);
 
     try{
-const verifyResponse = await fetch(`${SERVER_URL}/verify-register`, {
+const verifyResponse = await fetch(`${this.SERVER_URL}/verify-register`, {
     credentials: "include",
     method: "POST",
     headers: {
@@ -135,18 +135,13 @@ console.log("error in verify register"+error.message);
 
   // Step 3: Fetch authentication options from backend
   async getAuthenticationOptions(email: string): Promise<PublicKeyCredentialRequestOptions> {
-    const responseObservable = this.http.post<PublicKeyCredentialRequestOptions>(
-      'https://your-server.com/api/fido2/auth-request',
-      { username: 'user@example.com' }
-    );
-
-    const SERVER_URL = "https://c4d8c7d35a88.ngrok-free.app";
+ 
  if(email == undefined || email == null){
   this.openSnackBar('Email is needed',"close");
   
  }
   // 1. Get challenge from server
-  const initResponse = await fetch(`${SERVER_URL}/init-auth?email=${email}`, {
+  const initResponse = await fetch(`${this.SERVER_URL}/init-auth?email=${email}`, {
     credentials: "include",
     headers: {
       "ngrok-skip-browser-warning": "true",
@@ -159,7 +154,8 @@ console.log("error in verify register"+error.message);
     this.openSnackBar('Error in getting user auth:',"close");
     
   }
-  console.log('getAuthenticationOptions'+JSON.stringify(options))
+  console.log('getAuthenticationOptions')
+  console.log(options);
     //const response = await firstValueFrom(responseObservable);
     //const response = authenticationOptionData;
 
@@ -168,24 +164,33 @@ console.log("error in verify register"+error.message);
 
     // Convert allowCredentials.id from base64url
     //if (options.allowCredentials) {
-      //console.log('allow creds true');
-      //options.allowCredentials = options.allowCredentials.map((cred: { id: any; }) => ({
-       // ...cred,
-       // id: this.base64urlToUint8Array(cred.id as any)
+     // console.log('allow creds true');
+     // options.allowCredentials = options.allowCredentials.map((cred: { id: any; }) => ({
+      //  ...cred,
+      //  id: this.base64urlToUint8Array(cred.id as any)
       //}));
-   // }
+    //}
 
     return options;
   }
 
   // Step 4: Send authentication result to backend
   async sendAuthenticationResult(assertion: Credential): Promise<void> {
-    const SERVER_URL = "https://c4d8c7d35a88.ngrok-free.app";
+    ;
     const publicKeyCredential = assertion as PublicKeyCredential;
     console.log('publicKeyCredential'+JSON.stringify(assertion))
     const assertionResponse = publicKeyCredential.response as AuthenticatorAssertionResponse;
 console.log('assertionResponse'+JSON.stringify(assertionResponse));
-    
+console.log('clientDataJSON'+JSON.stringify(assertionResponse.clientDataJSON));
+console.log('authenticatorData'+JSON.stringify(assertionResponse.authenticatorData));
+console.log('signature'+JSON.stringify(assertionResponse.signature));
+
+console.log("rawId bytes:", new Uint8Array(publicKeyCredential.rawId).length);
+console.log("clientDataJSON bytes:", assertionResponse.clientDataJSON.byteLength);
+console.log("authenticatorData bytes:", assertionResponse.authenticatorData.byteLength);
+console.log("signature bytes:", assertionResponse.signature.byteLength);
+console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
+
     const assertionData = {
       id: publicKeyCredential.id,
       rawId: publicKeyCredential.rawId,
@@ -200,8 +205,9 @@ console.log('assertionResponse'+JSON.stringify(assertionResponse));
       clientExtensionResults: publicKeyCredential.getClientExtensionResults?.() ?? {},
     };
 
+    console.log('assertionData'+assertionData);
      // 3. Verify passkey with DB
-  const verifyResponse = await fetch(`${SERVER_URL}/verify-auth`, {
+  const verifyResponse = await fetch(`${this.SERVER_URL}/verify-auth`, {
     credentials: "include",
     method: "POST",
     headers: {
@@ -234,7 +240,9 @@ const assertion = await FidoAuthPlugin.register({
         publicKeyCredentialRequestOptions: options,
       });
     console.log('assertion'+JSON.stringify(assertion));
-    await this.sendAuthenticationResult(JSON.parse(assertion.assertionJson));
+    const asertionJson = JSON.parse(assertion.assertionJson);
+    console.log('asertionJson'+JSON.stringify(asertionJson))
+    await this.sendAuthenticationResult(asertionJson);
     }catch (err: any) {
   console.error("WebAuthn error:", err.name, err.message);
 }
@@ -244,12 +252,32 @@ const assertion = await FidoAuthPlugin.register({
   }
 
   // Helper: Convert Base64URL string to Uint8Array
-  base64urlToUint8Array(base64url: string): Uint8Array {
-    const padding = '='.repeat((4 - base64url.length % 4) % 4);
-    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/') + padding;
-    const raw = window.atob(base64);
-    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  
+  /**
+ * Decode a base64url string to a Uint8Array.
+ */
+ base64urlToUint8Array(base64url: string): Uint8Array {
+  // Pad with '=' to make length a multiple of 4
+  const padLength = (4 - (base64url.length % 4)) % 4
+  const padded    = base64url + '='.repeat(padLength)
+
+  // Convert from "base64url" to standard Base64
+  const b64 = padded
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+
+  // Decode the Base64 string to a binary string
+  const binary = atob(b64)
+
+  // Create a Uint8Array from char codes
+  const len = binary.length
+  const bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i)
   }
+  return bytes
+}
+
 
   // Helper: Convert Uint8Array to Base64URL string
   uint8ArrayToBase64url(buffer: Uint8Array): string {
@@ -262,6 +290,24 @@ const assertion = await FidoAuthPlugin.register({
       panelClass: 'my-custom-snackbar'
     });
   }
+
+  
+/**
+ * Helper to base64url-encode an ArrayBuffer or Uint8Array
+ */
+ bufferToBase64url(buf: ArrayBuffer | Uint8Array): string {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+
 
 
 }
