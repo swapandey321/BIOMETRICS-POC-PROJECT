@@ -74,7 +74,7 @@ public class FidoCapacitorAuthPlugin extends Plugin {
           @Override
           public void onResult(GetCredentialResponse response) {
             Credential credential = response.getCredential();
-            Bundle bundle = credential.getData();
+                    Bundle bundle = credential.getData();
             String assertionJson = bundle.getString("androidx.credentials.BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON");
 
             for (String key : bundle.keySet()) {
