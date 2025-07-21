@@ -1,3 +1,4 @@
+
 import { registerPlugin } from '@capacitor/core';
 
 export interface FidoAuthPlugin {

@@ -5,18 +5,18 @@ import  Fido  from './plugins/fido-plugin';
 import {registrationOptionData, authenticationOptionData} from './mockResponses';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import FidoAuthPlugin from './plugins/fido-auth-plugin';
-import { Http } from '@capacitor-community/http';
-import { arrayBufferToBase64url } from './utils/webauthn';
+import {FidoPluginPoc, FidoPluginPocPlugin} from '../../fido-plugin-poc/fido-plugin-poc/src';
+
 
 
 @Injectable({
   providedIn: 'root'
 })
 export class FidoService {
-  
+
 
   constructor(private http: HttpClient, readonly snackBar: MatSnackBar) {
-    
+
   }
 
    SERVER_URL = "https://01eba62eb93c.ngrok-free.app";
@@ -24,7 +24,7 @@ export class FidoService {
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend
   async getRegistrationOptions(email: string): Promise<any> {
-  
+
  const responseObservable = await fetch(
    `${this.SERVER_URL}/init-register?email=${email}`,
    { credentials: "include" ,
@@ -51,7 +51,7 @@ export class FidoService {
 
   // Step 2: Send new credential to backend
   async sendRegistrationResult(credential: Credential) {
-    
+
     const publicKeyCredential = credential as PublicKeyCredential;
     console.log('publicKeyCredential'+JSON.stringify(publicKeyCredential))
     const attestationResponse = publicKeyCredential.response as AuthenticatorAttestationResponse;
@@ -61,7 +61,7 @@ console.log('attestationResponse'+JSON.stringify(attestationResponse))
       id: publicKeyCredential.id,
       rawId: publicKeyCredential.rawId,
       type: publicKeyCredential.type,
-      response:{        
+      response:{
         clientDataJSON: attestationResponse.clientDataJSON,
         attestationObject: attestationResponse.attestationObject,
         transports: (publicKeyCredential.response as any).transports ?? [],
@@ -100,30 +100,36 @@ const verifyResponse = await fetch(`${this.SERVER_URL}/verify-register`, {
     }catch(error: any){
 console.log("error in verify register"+error.message);
     }
-    
+
 
     //return await firstValueFrom(this.http.post('https://your-server.com/api/fido2/register-response', credentialData));
   }
 
   async registerWithBiometrics(email: string): Promise<void> {
+    console.log('registerWithBiometrics');
+    const output = await FidoPluginPoc.echo({
+      value: "Hello Plugin for ios testing",
+    });
     if(email === undefined || email === null){
       this.openSnackBar('Please enter your email', "close");
       return;
     }
     try {
       const options = await this.getRegistrationOptions(email);
+
+      console.log('output from plugin'+output);
       console.log('options'+JSON.stringify(options));
       //const credential = await navigator.credentials.create({ publicKey: options });
-      const result = await Fido.register({
+      const result = await FidoPluginPoc.register({
         credentialJson: options,
       });
       console.log('result'+JSON.stringify(result));
       console.log(result);
-      
+
       this.openSnackBar(JSON.stringify(result), "close");
       const parsedCredential = JSON.parse(result.credentialJson);
 
-      let response = await this.sendRegistrationResult(parsedCredential);//TODO Response status code 
+      let response = await this.sendRegistrationResult(parsedCredential);//TODO Response status code
       console.log('✅ Registration successful');
     }
     catch(e: any) {
@@ -135,10 +141,10 @@ console.log("error in verify register"+error.message);
 
   // Step 3: Fetch authentication options from backend
   async getAuthenticationOptions(email: string): Promise<PublicKeyCredentialRequestOptions> {
- 
+
  if(email == undefined || email == null){
   this.openSnackBar('Email is needed',"close");
-  
+
  }
   // 1. Get challenge from server
   const initResponse = await fetch(`${this.SERVER_URL}/init-auth?email=${email}`, {
@@ -152,7 +158,7 @@ console.log("error in verify register"+error.message);
   if (!initResponse.ok) {
     console.log(options.error);
     this.openSnackBar('Error in getting user auth:',"close");
-    
+
   }
   console.log('getAuthenticationOptions')
   console.log(options);
@@ -247,12 +253,12 @@ const assertion = await FidoAuthPlugin.register({
   console.error("WebAuthn error:", err.name, err.message);
 }
 
-    
+
     console.log('✅ Authentication successful');
   }
 
   // Helper: Convert Base64URL string to Uint8Array
-  
+
   /**
  * Decode a base64url string to a Uint8Array.
  */
@@ -291,7 +297,7 @@ const assertion = await FidoAuthPlugin.register({
     });
   }
 
-  
+
 /**
  * Helper to base64url-encode an ArrayBuffer or Uint8Array
  */

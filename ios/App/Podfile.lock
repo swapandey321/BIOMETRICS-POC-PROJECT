@@ -1,0 +1,28 @@
+PODS:
+  - Capacitor (7.2.0):
+    - CapacitorCordova
+  - CapacitorCordova (7.2.0)
+  - FidoPluginPoc (0.0.1):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - FidoPluginPoc (from `../../fido-plugin-poc/fido-plugin-poc`)
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  FidoPluginPoc:
+    :path: "../../fido-plugin-poc/fido-plugin-poc"
+
+SPEC CHECKSUMS:
+  Capacitor: 03bc7cbdde6a629a8b910a9d7d78c3cc7ed09ea7
+  CapacitorCordova: 5967b9ba03915ef1d585469d6e31f31dc49be96f
+  FidoPluginPoc: 9654a8f71fb7925e8a7491524971c060464a9a3f
+
+PODFILE CHECKSUM: f3e3df77b01565fd57cf402d35771e1f334807f8
+
+COCOAPODS: 1.16.2
