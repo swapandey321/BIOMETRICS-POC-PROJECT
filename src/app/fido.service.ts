@@ -19,7 +19,7 @@ export class FidoService {
 
   }
 
-   SERVER_URL = "https://01eba62eb93c.ngrok-free.app";
+   SERVER_URL = "https://a691761947c0.ngrok-free.app";
 
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend
@@ -107,9 +107,9 @@ console.log("error in verify register"+error.message);
 
   async registerWithBiometrics(email: string): Promise<void> {
     console.log('registerWithBiometrics');
-    const output = await FidoPluginPoc.echo({
+    /*const output = await FidoPluginPoc.echo({
       value: "Hello Plugin for ios testing",
-    });
+    });*/
     if(email === undefined || email === null){
       this.openSnackBar('Please enter your email', "close");
       return;
@@ -117,8 +117,6 @@ console.log("error in verify register"+error.message);
     try {
       const options = await this.getRegistrationOptions(email);
 
-      console.log('output from plugin'+output);
-      console.log('options'+JSON.stringify(options));
       //const credential = await navigator.credentials.create({ publicKey: options });
       const result = await FidoPluginPoc.register({
         credentialJson: options,
@@ -242,9 +240,12 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
     console.log('authenticateWithBiometrics'+JSON.stringify(options));
     try{
 //const assertion = await navigator.credentials.get({ publicKey: options });
-const assertion = await FidoAuthPlugin.register({
+/*const assertion = await FidoAuthPlugin.register({
         publicKeyCredentialRequestOptions: options,
-      });
+      });*/ //--> this is for android
+      const assertion = await FidoPluginPoc.authenticate({
+        publicKeyCredentialRequestOptions: options,
+      })
     console.log('assertion'+JSON.stringify(assertion));
     const asertionJson = JSON.parse(assertion.assertionJson);
     console.log('asertionJson'+JSON.stringify(asertionJson))
