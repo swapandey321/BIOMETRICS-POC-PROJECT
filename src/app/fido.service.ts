@@ -5,7 +5,7 @@ import  Fido  from './plugins/fido-plugin';
 import {registrationOptionData, authenticationOptionData} from './mockResponses';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import FidoAuthPlugin from './plugins/fido-auth-plugin';
-import {FidoPluginPoc, FidoPluginPocPlugin} from '../../fido-plugin-poc/fido-plugin-poc/src';
+import {FidoPluginPoc, FidoPluginPocPlugin} from 'fido-plugin-poc';
 
 
 
