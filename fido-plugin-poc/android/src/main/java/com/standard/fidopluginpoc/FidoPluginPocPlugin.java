@@ -23,12 +23,8 @@ import androidx.credentials.CredentialManager;
 import androidx.credentials.CreateCredentialRequest;
 import androidx.credentials.CreateCredentialResponse;
 import androidx.credentials.exceptions.CreateCredentialException;
-import androidx.credentials.PublicKeyCredential;
 import androidx.credentials.CreatePublicKeyCredentialRequest;
 
-import org.json.JSONObject;
-
-import java.util.Base64;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -50,7 +46,7 @@ public class FidoPluginPocPlugin extends Plugin {
   }
 
   @PluginMethod
-  public void createCredential(PluginCall call) {
+  public void register(PluginCall call) {
     var data = call.getObject("credentialJson");
     if (data == null) {
       System.out.println("data");
@@ -101,20 +97,18 @@ public class FidoPluginPocPlugin extends Plugin {
   }
 
   @PluginMethod
-  public void authenticateCredential(PluginCall call) {
+  public void authenticate(PluginCall call) {
     var data = call.getObject("publicKeyCredentialRequestOptions");
     if (data == null) {
 
       call.reject("Missing server data");
       return;
     }
-    else{
+    else {
         Log.d("FidoAuthPlugin", "Received data: " + data.toString());
     }
 
     try {
-      //JSONObject requestData = new JSONObject();
-      //requestData.put("requestJson", data);
       GetPublicKeyCredentialOption publicKeyOption =
           new GetPublicKeyCredentialOption(data.toString());
       List<CredentialOption> options = Arrays.asList(publicKeyOption);
@@ -130,7 +124,15 @@ public class FidoPluginPocPlugin extends Plugin {
           @Override
           public void onResult(GetCredentialResponse response) {
             Credential credential = response.getCredential();
-                    Bundle bundle = credential.getData();
+            if (credential == null) {
+                call.reject("Credential is null");
+                return;
+            }
+            Bundle bundle = credential.getData();
+            if (bundle == null) {
+                call.reject("Credential data bundle is null");
+                return;
+            }
             String assertionJson = bundle.getString("androidx.credentials.BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON");
 
             for (String key : bundle.keySet()) {

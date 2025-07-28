@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @CapacitorPlugin(name = "FidoPluginPoc")
 public class FidoPluginPoc extends Plugin {
@@ -90,6 +91,26 @@ public class FidoPluginPoc extends Plugin {
       );
     } catch (Exception e) {
       call.reject("Error preparing credential request: " + e.getMessage());
+    }
+  }
+
+  @Override
+  protected void handleOnDestroy() {
+    super.handleOnDestroy();
+    if (executorService != null && !executorService.isShutdown()) {
+      executorService.shutdown();
+      try {
+        // Wait a while for existing tasks to terminate
+        if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+          // Cancel currently executing tasks and shutdown immediately
+          executorService.shutdownNow();
+        }
+      } catch (InterruptedException e) {
+        // Re-cancel if current thread was interrupted
+        executorService.shutdownNow();
+        // Preserve interrupt status
+        Thread.currentThread().interrupt();
+      }
     }
   }
 }
