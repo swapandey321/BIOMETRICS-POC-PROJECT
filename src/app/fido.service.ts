@@ -19,7 +19,7 @@ export class FidoService {
 
   }
 
-   SERVER_URL = "https://a691761947c0.ngrok-free.app";
+   SERVER_URL = "https://175b2668e127.ngrok-free.app";
 
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend

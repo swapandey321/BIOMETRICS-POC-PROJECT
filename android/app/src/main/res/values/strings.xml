@@ -6,7 +6,7 @@
     <string name="custom_url_scheme">com.poc.bio.app</string>
   <string name="asset_statements" translatable="false">
 [{
-  \"include\": \"https://01eba62eb93c.ngrok-free.app/.well-known/assetlinks.json\"
+  \"include\": \"https://175b2668e127.ngrok-free.app/.well-known/assetlinks.json\"
 }]
 </string>
 </resources>

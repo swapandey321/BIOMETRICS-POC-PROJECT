@@ -1,11 +1,11 @@
 ⚡️  [log] - registerWithBiometrics
 ⚡️  [log] - {}
-⚡️  [log] - {"challenge":"lLUBAflcoWAN7bcZ1Fy2-n8gS2WqT5-Lg0jKF7aRldw","rp":{"name":"Biometric POC App","id":"01eba62eb93c.ngrok-free.app"},"user":{"id":"sAk4KO-IKSBZqHCsE1AQBA","name":"Test2@testing.com","displayName":"Test2@testing.com"},"pubKeyCredParams":[{"alg":-8,"type":"public-key"},{"alg":-7,"type":"public-key"},{"alg":-257,"type":"public-key"}],"timeout":60000,"attestation":"none","excludeCredentials":[],"authenticatorSelection":{"residentKey":"preferred","userVerification":"preferred","requireResidentKey":false},"extensions":{"credProps":true},"hints":[]}
+⚡️  [log] - {"challenge":"lLUBAflcoWAN7bcZ1Fy2-n8gS2WqT5-Lg0jKF7aRldw","rp":{"name":"Biometric POC App","id":"175b2668e127.ngrok-free.app"},"user":{"id":"sAk4KO-IKSBZqHCsE1AQBA","name":"Test2@testing.com","displayName":"Test2@testing.com"},"pubKeyCredParams":[{"alg":-8,"type":"public-key"},{"alg":-7,"type":"public-key"},{"alg":-257,"type":"public-key"}],"timeout":60000,"attestation":"none","excludeCredentials":[],"authenticatorSelection":{"residentKey":"preferred","userVerification":"preferred","requireResidentKey":false},"extensions":{"credProps":true},"hints":[]}
 ⚡️  To Native ->  FidoPluginPoc register 70891121
 --- register method called inside plugin---
-Register: credentialJson received: ["excludeCredentials": [], "attestation": "none", "rp": ["id": "01eba62eb93c.ngrok-free.app", "name": "Biometric POC App"], "pubKeyCredParams": [["alg": -8, "type": "public-key"], ["alg": -7, "type": "public-key"], ["type": "public-key", "alg": -257]], "extensions": ["credProps": 1], "challenge": "lLUBAflcoWAN7bcZ1Fy2-n8gS2WqT5-Lg0jKF7aRldw", "hints": [], "user": ["id": "sAk4KO-IKSBZqHCsE1AQBA", "name": "Test2@testing.com", "displayName": "Test2@testing.com"], "timeout": 60000, "authenticatorSelection": ["residentKey": "preferred", "requireResidentKey": 0, "userVerification": "preferred"]]
+Register: credentialJson received: ["excludeCredentials": [], "attestation": "none", "rp": ["id": "175b2668e127.ngrok-free.app", "name": "Biometric POC App"], "pubKeyCredParams": [["alg": -8, "type": "public-key"], ["alg": -7, "type": "public-key"], ["type": "public-key", "alg": -257]], "extensions": ["credProps": 1], "challenge": "lLUBAflcoWAN7bcZ1Fy2-n8gS2WqT5-Lg0jKF7aRldw", "hints": [], "user": ["id": "sAk4KO-IKSBZqHCsE1AQBA", "name": "Test2@testing.com", "displayName": "Test2@testing.com"], "timeout": 60000, "authenticatorSelection": ["residentKey": "preferred", "requireResidentKey": 0, "userVerification": "preferred"]]
 Register: Parsed parameters:
-  rpId: 01eba62eb93c.ngrok-free.app
+  rpId: 175b2668e127.ngrok-free.app
 userIdBase64URL: sAk4KO-IKSBZqHCsE1AQBA
 userDisplayName: Test2@testing.com
 challengeBase64URL: lLUBAflcoWAN7bcZ1Fy2-n8gS2WqT5-Lg0jKF7aRldw

@@ -2,7 +2,7 @@
 
 <network-security-config>
   <domain-config cleartextTrafficPermitted="false">
-    <domain includeSubdomains="true">01eba62eb93c.ngrok-free.app</domain>
+    <domain includeSubdomains="true">175b2668e127.ngrok-free.app</domain>
   </domain-config>
   <debug-overrides>
     <trust-anchors>
