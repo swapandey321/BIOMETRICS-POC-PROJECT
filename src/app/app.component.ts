@@ -18,12 +18,12 @@ export class AppComponent implements OnInit{
   }
   ngOnInit(){
     console.log('oninit called');
-    this.authenticateOnLaunch();
+    //this.authenticateOnLaunch();
     // Listen for app resume
     App.addListener('appStateChange', ({ isActive }) => {
       if (isActive) {
         console.log('App resumed');
-        this.authenticateOnLaunch(); // Re-authenticate on resume
+        //this.authenticateOnLaunch(); // Re-authenticate on resume
       }
     });
 

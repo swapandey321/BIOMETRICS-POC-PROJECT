@@ -4,8 +4,8 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>webcredentials:175b2668e127.ngrok-free.app</string>
-		<string>applinks:175b2668e127.ngrok-free.app</string>
+		<string>webcredentials:e0eb9dfc8a2c.ngrok-free.app</string>
+		<string>applinks:e0eb9dfc8a2c.ngrok-free.app</string>
 	</array>
 </dict>
 </plist>
