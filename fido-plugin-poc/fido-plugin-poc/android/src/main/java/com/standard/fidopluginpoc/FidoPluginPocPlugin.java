@@ -1,17 +1,46 @@
 package com.standard.fidopluginpoc;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import androidx.annotation.RequiresApi;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 
-import javax.naming.Context;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.os.Bundle;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CreateCredentialRequest;
+import androidx.credentials.CreateCredentialResponse;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CredentialOption;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.GetPublicKeyCredentialOption;
+import androidx.credentials.exceptions.CreateCredentialException;
+import androidx.credentials.PublicKeyCredential;
+import androidx.credentials.CreatePublicKeyCredentialRequest;
+import androidx.credentials.exceptions.GetCredentialException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @CapacitorPlugin(name = "FidoPluginPoc")
 public class FidoPluginPocPlugin extends Plugin {
@@ -21,7 +50,7 @@ public class FidoPluginPocPlugin extends Plugin {
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private FidoPluginPoc implementation = new FidoPluginPoc();
-    
+
     public FidoPluginPocPlugin () {
     super();
   }
