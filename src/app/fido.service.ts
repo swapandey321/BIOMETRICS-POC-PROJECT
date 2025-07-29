@@ -19,7 +19,7 @@ export class FidoService {
 
   }
 
-   SERVER_URL = "https://175b2668e127.ngrok-free.app";
+   SERVER_URL = "https://e0eb9dfc8a2c.ngrok-free.app";
 
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend
@@ -243,7 +243,7 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
     console.log('response from fetch secure storage');
     console.log(JSON.stringify(response));
     console.log(response.response.userName);
-    const options = await this.getAuthenticationOptions(response.response.userName);
+    const options = await this.getAuthenticationOptions(email);
     console.log('authenticateWithBiometrics'+JSON.stringify(options));
     try{
 //const assertion = await navigator.credentials.get({ publicKey: options });
