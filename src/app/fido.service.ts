@@ -19,7 +19,7 @@ export class FidoService {
 
   }
 
-   SERVER_URL = "https://a691761947c0.ngrok-free.app";
+   SERVER_URL = "https://175b2668e127.ngrok-free.app";
 
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend
@@ -88,11 +88,14 @@ const verifyResponse = await fetch(`${this.SERVER_URL}/verify-register`, {
   console.log(JSON.stringify(verifyResponse));
 
   const verifyData = await verifyResponse.json()
-  console.log(verifyData);
+  console.log(JSON.stringify(verifyData));
   if (!verifyResponse.ok) {
     this.openSnackBar('Error ${verifyData.error}',"close")
   }
   if (verifyData.verified) {
+    const response = await FidoPluginPoc.secureStorage({
+      verificationJson: verifyData
+    });
     this.openSnackBar(`Successfully registered`,"close")
   } else {
     this.openSnackBar(`Failed to register`,"close")
@@ -236,7 +239,11 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
   }
 
   async authenticateWithBiometrics(email: string): Promise<void> {
-    const options = await this.getAuthenticationOptions(email);
+    const response = await FidoPluginPoc.fetchSecureStorage();
+    console.log('response from fetch secure storage');
+    console.log(JSON.stringify(response));
+    console.log(response.response.userName);
+    const options = await this.getAuthenticationOptions(response.response.userName);
     console.log('authenticateWithBiometrics'+JSON.stringify(options));
     try{
 //const assertion = await navigator.credentials.get({ publicKey: options });

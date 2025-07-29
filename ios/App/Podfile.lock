@@ -1,28 +1,40 @@
 PODS:
+  - AparajitaCapacitorBiometricAuth (9.0.0):
+    - Capacitor
   - Capacitor (7.2.0):
     - CapacitorCordova
+  - CapacitorApp (7.0.1):
+    - Capacitor
   - CapacitorCordova (7.2.0)
   - FidoPluginPoc (0.0.1):
     - Capacitor
 
 DEPENDENCIES:
+  - "AparajitaCapacitorBiometricAuth (from `../../node_modules/@aparajita/capacitor-biometric-auth`)"
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - FidoPluginPoc (from `../../fido-plugin-poc/fido-plugin-poc`)
 
 EXTERNAL SOURCES:
+  AparajitaCapacitorBiometricAuth:
+    :path: "../../node_modules/@aparajita/capacitor-biometric-auth"
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../node_modules/@capacitor/app"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   FidoPluginPoc:
     :path: "../../fido-plugin-poc/fido-plugin-poc"
 
 SPEC CHECKSUMS:
+  AparajitaCapacitorBiometricAuth: 77be369942778adf29e20893caa5c0a75e5936fa
   Capacitor: 03bc7cbdde6a629a8b910a9d7d78c3cc7ed09ea7
+  CapacitorApp: febecbb9582cb353aed037e18ec765141f880fe9
   CapacitorCordova: 5967b9ba03915ef1d585469d6e31f31dc49be96f
   FidoPluginPoc: 9654a8f71fb7925e8a7491524971c060464a9a3f
 
-PODFILE CHECKSUM: f3e3df77b01565fd57cf402d35771e1f334807f8
+PODFILE CHECKSUM: f31c13674e455614c3ece1679f6c28a8e4f6c35c
 
 COCOAPODS: 1.16.2
