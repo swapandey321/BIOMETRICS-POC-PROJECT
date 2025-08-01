@@ -25,7 +25,7 @@ export class FidoService {
   // Step 1: Fetch registration options from backend
   async getRegistrationOptions(email: string): Promise<any> {
 
-    await this.getId();
+    const options = await this.getId();
 
     const responseObservable = await fetch(
       `${this.SERVER_URL}/init-register?email=${email}`,
@@ -39,7 +39,8 @@ export class FidoService {
       },
     )
     console.log(responseObservable);
-    const options = await responseObservable.json()
+    //const options = await responseObservable.json()
+    //const options = await responseObservable.json()
     //const response = await firstValueFrom(responseObservable);
     console.log(options);
     //const response = registrationOptionData;
@@ -344,7 +345,7 @@ export class FidoService {
       .replace(/=+$/, '');
   }
 
-  async getId() {
+  async getId(): Promise<any>  {
     console.log('getId called');
 
     const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=663b58f2-6203-4bfb-9473-fd3f0ce050ad';
@@ -359,13 +360,16 @@ export class FidoService {
       console.log(textBody);
       console.log('getting the id param')
       console.log(JSON.parse(textBody).id);
-      await this.getFidoChallenge(JSON.parse(textBody).id);
+     const options =  await this.getFidoChallenge(JSON.parse(textBody).id);
+     console.log(options);
+     return options
     } catch (error) {
       console.error('An error occurred:', error);
     }
+
   }
 
-  async getFidoChallenge(id: string) {
+  async getFidoChallenge(id: string): Promise<any>  {
     const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
     const requestBody = {
       "id": id,
@@ -425,6 +429,9 @@ export class FidoService {
     console.log('The entire FIDO2 challenge object is:');
     console.log(fidoChallengeData);
 
+    fidoChallengeData.rp.id = 'e0eb9dfc8a2c.ngrok-free.app';
+
+    return fidoChallengeData;
     const pluginResponse = await FidoPluginPoc.register({
       credentialJson: fidoChallengeData,
     });
