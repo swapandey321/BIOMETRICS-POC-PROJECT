@@ -19,49 +19,51 @@ export class FidoService {
 
   }
 
-   SERVER_URL = "https://e0eb9dfc8a2c.ngrok-free.app";
+  SERVER_URL = "https://e0eb9dfc8a2c.ngrok-free.app";
 
   // Step 1: Fetch registration options from backend
   // Step 1: Fetch registration options from backend
   async getRegistrationOptions(email: string): Promise<any> {
 
- const responseObservable = await fetch(
-   `${this.SERVER_URL}/init-register?email=${email}`,
-   { credentials: "include" ,
-    headers: {
-      "ngrok-skip-browser-warning": "true",
-      "Ngrok-Skip-Browser-Warning": "true"
-    }
+    await this.getId();
 
-   },
+    const responseObservable = await fetch(
+      `${this.SERVER_URL}/init-register?email=${email}`,
+      {
+        credentials: "include",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          "Ngrok-Skip-Browser-Warning": "true"
+        }
 
- )
- console.log(responseObservable);
- const options = await responseObservable.json()
- //const response = await firstValueFrom(responseObservable);
- console.log(options);
- //const response = registrationOptionData;
- //options.challenge = this.uint8ArrayToBase64url(new TextEncoder().encode(options.challenge));
- //options.user.id = this.uint8ArrayToBase64url(new TextEncoder().encode(options.user.id));
- //response.challenge = this.base64urlToUint8Array(response.challenge as any);
- //response.user.id = this.base64urlToUint8Array(response.user.id as any);
+      },
+    )
+    console.log(responseObservable);
+    const options = await responseObservable.json()
+    //const response = await firstValueFrom(responseObservable);
+    console.log(options);
+    //const response = registrationOptionData;
+    //options.challenge = this.uint8ArrayToBase64url(new TextEncoder().encode(options.challenge));
+    //options.user.id = this.uint8ArrayToBase64url(new TextEncoder().encode(options.user.id));
+    //response.challenge = this.base64urlToUint8Array(response.challenge as any);
+    //response.user.id = this.base64urlToUint8Array(response.user.id as any);
 
- return options;
+    return options;
   }
 
   // Step 2: Send new credential to backend
   async sendRegistrationResult(credential: Credential) {
 
     const publicKeyCredential = credential as PublicKeyCredential;
-    console.log('publicKeyCredential'+JSON.stringify(publicKeyCredential))
+    console.log('publicKeyCredential' + JSON.stringify(publicKeyCredential))
     const attestationResponse = publicKeyCredential.response as AuthenticatorAttestationResponse;
-    console.log('publicKeyCredential.response'+JSON.stringify(publicKeyCredential.response))
-console.log('attestationResponse'+JSON.stringify(attestationResponse))
+    console.log('publicKeyCredential.response' + JSON.stringify(publicKeyCredential.response))
+    console.log('attestationResponse' + JSON.stringify(attestationResponse))
     const credentialData = {
       id: publicKeyCredential.id,
       rawId: publicKeyCredential.rawId,
       type: publicKeyCredential.type,
-      response:{
+      response: {
         clientDataJSON: attestationResponse.clientDataJSON,
         attestationObject: attestationResponse.attestationObject,
         transports: (publicKeyCredential.response as any).transports ?? [],
@@ -69,39 +71,39 @@ console.log('attestationResponse'+JSON.stringify(attestationResponse))
       clientExtensionResults: publicKeyCredential.getClientExtensionResults?.() ?? {},
     };
 
-    console.log('rawId'+ credentialData.rawId);
-    console.log('clientDataJSON'+credentialData.response.clientDataJSON);
+    console.log('rawId' + credentialData.rawId);
+    console.log('clientDataJSON' + credentialData.response.clientDataJSON);
 
-    try{
-const verifyResponse = await fetch(`${this.SERVER_URL}/verify-register`, {
-    credentials: "include",
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
-      "Ngrok-Skip-Browser-Warning": "true"
-    },
-    body: JSON.stringify(credentialData),
-  })
+    try {
+      const verifyResponse = await fetch(`${this.SERVER_URL}/verify-register`, {
+        credentials: "include",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+          "Ngrok-Skip-Browser-Warning": "true"
+        },
+        body: JSON.stringify(credentialData),
+      })
 
-  console.log('verify response');
-  console.log(JSON.stringify(verifyResponse));
+      console.log('verify response');
+      console.log(JSON.stringify(verifyResponse));
 
-  const verifyData = await verifyResponse.json()
-  console.log(JSON.stringify(verifyData));
-  if (!verifyResponse.ok) {
-    this.openSnackBar('Error ${verifyData.error}',"close")
-  }
-  if (verifyData.verified) {
-    const response = await FidoPluginPoc.secureStorage({
-      verificationJson: verifyData
-    });
-    this.openSnackBar(`Successfully registered`,"close")
-  } else {
-    this.openSnackBar(`Failed to register`,"close")
-  }
-    }catch(error: any){
-console.log("error in verify register"+error.message);
+      const verifyData = await verifyResponse.json()
+      console.log(JSON.stringify(verifyData));
+      if (!verifyResponse.ok) {
+        this.openSnackBar('Error ${verifyData.error}', "close")
+      }
+      if (verifyData.verified) {
+        const response = await FidoPluginPoc.secureStorage({
+          verificationJson: verifyData
+        });
+        this.openSnackBar(`Successfully registered`, "close")
+      } else {
+        this.openSnackBar(`Failed to register`, "close")
+      }
+    } catch (error: any) {
+      console.log("error in verify register" + error.message);
     }
 
 
@@ -113,7 +115,7 @@ console.log("error in verify register"+error.message);
     /*const output = await FidoPluginPoc.echo({
       value: "Hello Plugin for ios testing",
     });*/
-    if(email === undefined || email === null){
+    if (email === undefined || email === null) {
       this.openSnackBar('Please enter your email', "close");
       return;
     }
@@ -124,7 +126,7 @@ console.log("error in verify register"+error.message);
       const result = await FidoPluginPoc.register({
         credentialJson: options,
       });
-      console.log('result'+JSON.stringify(result));
+      console.log('result' + JSON.stringify(result));
       console.log(result);
 
       this.openSnackBar(JSON.stringify(result), "close");
@@ -132,9 +134,8 @@ console.log("error in verify register"+error.message);
 
       let response = await this.sendRegistrationResult(parsedCredential);//TODO Response status code
       console.log('✅ Registration successful');
-    }
-    catch(e: any) {
-      console.log('error'+e.message)
+    } catch (e: any) {
+      console.log('error' + e.message)
       console.log(e.name);
       this.openSnackBar(`Error on navigator.credentials.create errorname: ${e.name} errorMessage: ${e.message}`, "close");
     }
@@ -143,26 +144,26 @@ console.log("error in verify register"+error.message);
   // Step 3: Fetch authentication options from backend
   async getAuthenticationOptions(email: string): Promise<PublicKeyCredentialRequestOptions> {
 
- if(email == undefined || email == null){
-  this.openSnackBar('Email is needed',"close");
+    if (email == undefined || email == null) {
+      this.openSnackBar('Email is needed', "close");
 
- }
-  // 1. Get challenge from server
-  const initResponse = await fetch(`${this.SERVER_URL}/init-auth?email=${email}`, {
-    credentials: "include",
-    headers: {
-      "ngrok-skip-browser-warning": "true",
-      "Ngrok-Skip-Browser-Warning": "true"
     }
-  })
-  const options = await initResponse.json()
-  if (!initResponse.ok) {
-    console.log(options.error);
-    this.openSnackBar('Error in getting user auth:',"close");
+    // 1. Get challenge from server
+    const initResponse = await fetch(`${this.SERVER_URL}/init-auth?email=${email}`, {
+      credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+        "Ngrok-Skip-Browser-Warning": "true"
+      }
+    })
+    const options = await initResponse.json()
+    if (!initResponse.ok) {
+      console.log(options.error);
+      this.openSnackBar('Error in getting user auth:', "close");
 
-  }
-  console.log('getAuthenticationOptions')
-  console.log(options);
+    }
+    console.log('getAuthenticationOptions')
+    console.log(options);
     //const response = await firstValueFrom(responseObservable);
     //const response = authenticationOptionData;
 
@@ -171,11 +172,11 @@ console.log("error in verify register"+error.message);
 
     // Convert allowCredentials.id from base64url
     //if (options.allowCredentials) {
-     // console.log('allow creds true');
-     // options.allowCredentials = options.allowCredentials.map((cred: { id: any; }) => ({
-      //  ...cred,
-      //  id: this.base64urlToUint8Array(cred.id as any)
-      //}));
+    // console.log('allow creds true');
+    // options.allowCredentials = options.allowCredentials.map((cred: { id: any; }) => ({
+    //  ...cred,
+    //  id: this.base64urlToUint8Array(cred.id as any)
+    //}));
     //}
 
     return options;
@@ -185,18 +186,18 @@ console.log("error in verify register"+error.message);
   async sendAuthenticationResult(assertion: Credential): Promise<void> {
     ;
     const publicKeyCredential = assertion as PublicKeyCredential;
-    console.log('publicKeyCredential'+JSON.stringify(assertion))
+    console.log('publicKeyCredential' + JSON.stringify(assertion))
     const assertionResponse = publicKeyCredential.response as AuthenticatorAssertionResponse;
-console.log('assertionResponse'+JSON.stringify(assertionResponse));
-console.log('clientDataJSON'+JSON.stringify(assertionResponse.clientDataJSON));
-console.log('authenticatorData'+JSON.stringify(assertionResponse.authenticatorData));
-console.log('signature'+JSON.stringify(assertionResponse.signature));
+    console.log('assertionResponse' + JSON.stringify(assertionResponse));
+    console.log('clientDataJSON' + JSON.stringify(assertionResponse.clientDataJSON));
+    console.log('authenticatorData' + JSON.stringify(assertionResponse.authenticatorData));
+    console.log('signature' + JSON.stringify(assertionResponse.signature));
 
-console.log("rawId bytes:", new Uint8Array(publicKeyCredential.rawId).length);
-console.log("clientDataJSON bytes:", assertionResponse.clientDataJSON.byteLength);
-console.log("authenticatorData bytes:", assertionResponse.authenticatorData.byteLength);
-console.log("signature bytes:", assertionResponse.signature.byteLength);
-console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
+    console.log("rawId bytes:", new Uint8Array(publicKeyCredential.rawId).length);
+    console.log("clientDataJSON bytes:", assertionResponse.clientDataJSON.byteLength);
+    console.log("authenticatorData bytes:", assertionResponse.authenticatorData.byteLength);
+    console.log("signature bytes:", assertionResponse.signature.byteLength);
+    console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
 
     const assertionData = {
       id: publicKeyCredential.id,
@@ -212,29 +213,29 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
       clientExtensionResults: publicKeyCredential.getClientExtensionResults?.() ?? {},
     };
 
-    console.log('assertionData'+assertionData);
-     // 3. Verify passkey with DB
-  const verifyResponse = await fetch(`${this.SERVER_URL}/verify-auth`, {
-    credentials: "include",
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
-      "Ngrok-Skip-Browser-Warning": "true"
-    },
-    body: JSON.stringify(assertionData),
-  })
+    console.log('assertionData' + assertionData);
+    // 3. Verify passkey with DB
+    const verifyResponse = await fetch(`${this.SERVER_URL}/verify-auth`, {
+      credentials: "include",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        "Ngrok-Skip-Browser-Warning": "true"
+      },
+      body: JSON.stringify(assertionData),
+    })
 
-  const verifyData = await verifyResponse.json()
-  console.log('verifyData'+JSON.stringify(verifyData));
-  if (!verifyResponse.ok) {
-    console.log(verifyData.error)
-  }
-  if (verifyData.verified) {
-    this.openSnackBar(`Successfully logged in`,"close")
-  } else {
-    this.openSnackBar(`Failed to log in`,"close")
-  }
+    const verifyData = await verifyResponse.json()
+    console.log('verifyData' + JSON.stringify(verifyData));
+    if (!verifyResponse.ok) {
+      console.log(verifyData.error)
+    }
+    if (verifyData.verified) {
+      this.openSnackBar(`Successfully logged in`, "close")
+    } else {
+      this.openSnackBar(`Failed to log in`, "close")
+    }
     //let response = await firstValueFrom(this.http.post('https://your-server.com/api/fido2/auth-response', assertionData)); // TODO response status
   }
 
@@ -244,22 +245,22 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
     console.log(JSON.stringify(response));
     console.log(response.response.userName);
     const options = await this.getAuthenticationOptions(email);
-    console.log('authenticateWithBiometrics'+JSON.stringify(options));
-    try{
+    console.log('authenticateWithBiometrics' + JSON.stringify(options));
+    try {
 //const assertion = await navigator.credentials.get({ publicKey: options });
-/*const assertion = await FidoAuthPlugin.register({
-        publicKeyCredentialRequestOptions: options,
-      });*/ //--> this is for android
+      /*const assertion = await FidoAuthPlugin.register({
+              publicKeyCredentialRequestOptions: options,
+            });*/ //--> this is for android
       const assertion = await FidoPluginPoc.authenticate({
         publicKeyCredentialRequestOptions: options,
       })
-    console.log('assertion'+JSON.stringify(assertion));
-    const asertionJson = JSON.parse(assertion.assertionJson);
-    console.log('asertionJson'+JSON.stringify(asertionJson))
-    await this.sendAuthenticationResult(asertionJson);
-    }catch (err: any) {
-  console.error("WebAuthn error:", err.name, err.message);
-}
+      console.log('assertion' + JSON.stringify(assertion));
+      const asertionJson = JSON.parse(assertion.assertionJson);
+      console.log('asertionJson' + JSON.stringify(asertionJson))
+      await this.sendAuthenticationResult(asertionJson);
+    } catch (err: any) {
+      console.error("WebAuthn error:", err.name, err.message);
+    }
 
 
     console.log('✅ Authentication successful');
@@ -268,29 +269,29 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
   // Helper: Convert Base64URL string to Uint8Array
 
   /**
- * Decode a base64url string to a Uint8Array.
- */
- base64urlToUint8Array(base64url: string): Uint8Array {
-  // Pad with '=' to make length a multiple of 4
-  const padLength = (4 - (base64url.length % 4)) % 4
-  const padded    = base64url + '='.repeat(padLength)
+   * Decode a base64url string to a Uint8Array.
+   */
+  base64urlToUint8Array(base64url: string): Uint8Array {
+    // Pad with '=' to make length a multiple of 4
+    const padLength = (4 - (base64url.length % 4)) % 4
+    const padded = base64url + '='.repeat(padLength)
 
-  // Convert from "base64url" to standard Base64
-  const b64 = padded
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
+    // Convert from "base64url" to standard Base64
+    const b64 = padded
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
 
-  // Decode the Base64 string to a binary string
-  const binary = atob(b64)
+    // Decode the Base64 string to a binary string
+    const binary = atob(b64)
 
-  // Create a Uint8Array from char codes
-  const len = binary.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i)
+    // Create a Uint8Array from char codes
+    const len = binary.length
+    const bytes = new Uint8Array(len)
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
   }
-  return bytes
-}
 
 
   // Helper: Convert Uint8Array to Base64URL string
@@ -298,6 +299,7 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
     const base64 = btoa(String.fromCharCode(...buffer));
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
+
   openSnackBar(message: string, action: string) {
     this.snackBar.open(message, action, {
       duration: 4000,
@@ -305,22 +307,130 @@ console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
     });
   }
 
+  // The input byteArray is an array of signed numbers (Int8)
+// We need to convert them to unsigned 8-bit integers (Uint8)
+// before creating the string for btoa().
+  toBase64Url(byteArray: number[]): string {
+    const uint8Array = new Uint8Array(byteArray);
+    let binary = '';
 
-/**
- * Helper to base64url-encode an ArrayBuffer or Uint8Array
- */
- bufferToBase64url(buf: ArrayBuffer | Uint8Array): string {
-  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < uint8Array.length; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+
+    const base64 = btoa(binary);
+
+    // Now, convert standard Base64 to Base64URL format
+    const base64Url = base64
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    return base64Url;
   }
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
 
+  /**
+   * Helper to base64url-encode an ArrayBuffer or Uint8Array
+   */
+  bufferToBase64url(buf: ArrayBuffer | Uint8Array): string {
+    const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  async getId() {
+    console.log('getId called');
+
+    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=663b58f2-6203-4bfb-9473-fd3f0ce050ad';
+
+    try {
+      // The `await` keyword pauses execution until the fetch promise resolves.
+      const response = await fetch(url);
+      console.log('response from pingone');
+
+      // The `response` object needs to be processed to get its body content.
+      const textBody = await response.text();
+      console.log(textBody);
+      console.log('getting the id param')
+      console.log(JSON.parse(textBody).id);
+      await this.getFidoChallenge(JSON.parse(textBody).id);
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
+  }
+
+  async getFidoChallenge(id: string) {
+    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
+    const requestBody = {
+      "id": id,
+      "nextEvent": {
+        "constructType": "skEvent",
+        "eventName": "continue",
+        "params": [],
+        "eventType": "post",
+        "postProcess": {}
+      },
+      "parameters": {
+        "username": "testuser-7-30-25",
+        "buttonType": "form-submit",
+        "buttonValue": "submit"
+      },
+      "eventName": "continue"
+    };
+    console.log('Fido challenge request body:', requestBody);
+
+    const response = await fetch(`${url}`, {
+      method: "POST",
+      // Add the Content-Type header
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('Fido challenge response status:', response.status, response.statusText);
+
+    // If the response is not OK, throw an error to catch it below
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.text();
+    console.log('fido challenge raw response body:', result); // Log the raw body
+
+    // Parse the full JSON response
+    const responseData = JSON.parse(result);
+
+// Navigate the nested object to find the FIDO challenge
+    const fidoChallengeData = responseData.screen.properties.fidoChallenge.value;
+
+    console.log('The entire FIDO2 challenge object is:');
+    console.log(fidoChallengeData);
+
+    const challengeBase64Url = this.toBase64Url(fidoChallengeData.challenge);
+    fidoChallengeData.challenge = challengeBase64Url;
+    console.log('base64 url encoded challenge'+challengeBase64Url)
+
+    // 2. Convert the 'user.id' byte array to a Base64URL string
+    const userIdBase64Url = this.toBase64Url(fidoChallengeData.user.id);
+    console.log('base 64 url encoded user id'+userIdBase64Url);
+    fidoChallengeData.user.id = userIdBase64Url;
+// Now you can access the individual WebAuthn properties
+    console.log('The entire FIDO2 challenge object is:');
+    console.log(fidoChallengeData);
+
+    const pluginResponse = await FidoPluginPoc.register({
+      credentialJson: fidoChallengeData,
+    });
+    console.log('result from plugin' + JSON.stringify(pluginResponse));
+    console.log(pluginResponse);
+  }
 
 
 
