@@ -53,9 +53,9 @@ export class FidoService {
   }
 
   // Step 2: Send new credential to backend
-  async sendRegistrationResult(credential: Credential) {
+  async sendRegistrationResult(credential: any) {
 
-    const publicKeyCredential = credential as PublicKeyCredential;
+    /*const publicKeyCredential = credential as PublicKeyCredential;
     console.log('publicKeyCredential' + JSON.stringify(publicKeyCredential))
     const attestationResponse = publicKeyCredential.response as AuthenticatorAttestationResponse;
     console.log('publicKeyCredential.response' + JSON.stringify(publicKeyCredential.response))
@@ -73,9 +73,35 @@ export class FidoService {
     };
 
     console.log('rawId' + credentialData.rawId);
-    console.log('clientDataJSON' + credentialData.response.clientDataJSON);
+    console.log('clientDataJSON' + credentialData.response.clientDataJSON);*/
+    try{
+    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
 
-    try {
+    console.log('attestation object:', credential);
+
+    const response = await fetch(`${url}`, {
+      method: "POST",
+      // Add the Content-Type header
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(credential),
+    });
+
+    console.log('attestation response status:', response.status, response.statusText);
+
+    // If the response is not OK, throw an error to catch it below
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.text();
+    console.log('fido challenge raw response body:', result); // Log the raw body
+
+    // Parse the full JSON response
+    const responseData = JSON.parse(result);
+    console.log(responseData);
+    /*try {
       const verifyResponse = await fetch(`${this.SERVER_URL}/verify-register`, {
         credentials: "include",
         method: "POST",
@@ -102,7 +128,7 @@ export class FidoService {
         this.openSnackBar(`Successfully registered`, "close")
       } else {
         this.openSnackBar(`Failed to register`, "close")
-      }
+      }*/
     } catch (error: any) {
       console.log("error in verify register" + error.message);
     }
@@ -124,16 +150,37 @@ export class FidoService {
       const options = await this.getRegistrationOptions(email);
 
       //const credential = await navigator.credentials.create({ publicKey: options });
+      console.log('options received from pingone');
+      console.log(options);
       const result = await FidoPluginPoc.register({
-        credentialJson: options,
+        credentialJson: options.fidoChallengeData,
       });
-      console.log('result' + JSON.stringify(result));
       console.log(result);
+
+      //prepare the json object to be sent to ping one
+      const attestation = {
+        "id": options.id,
+        "nextEvent": {
+          "constructType": "skEvent",
+          "eventName": "continue",
+          "params": [],
+          "eventType": "post",
+          "postProcess": {}
+        },
+        "parameters": {
+          "buttonType": "form-submit",
+          "buttonValue": "submit",
+          "attestationValue": result
+        },
+        "eventName": "continue"
+      }
+      console.log('result' + JSON.stringify(result));
+
 
       this.openSnackBar(JSON.stringify(result), "close");
       const parsedCredential = JSON.parse(result.credentialJson);
 
-      let response = await this.sendRegistrationResult(parsedCredential);//TODO Response status code
+      let response = await this.sendRegistrationResult(attestation);//TODO Response status code
       console.log('✅ Registration successful');
     } catch (e: any) {
       console.log('error' + e.message)
@@ -431,12 +478,38 @@ export class FidoService {
 
     fidoChallengeData.rp.id = 'e0eb9dfc8a2c.ngrok-free.app';
 
-    return fidoChallengeData;
+    const fidoChallenge = {
+      id: responseData.id,
+      fidoChallengeData: fidoChallengeData
+    }
+
+    return fidoChallenge;
     const pluginResponse = await FidoPluginPoc.register({
       credentialJson: fidoChallengeData,
     });
     console.log('result from plugin' + JSON.stringify(pluginResponse));
     console.log(pluginResponse);
+  }
+
+  getIdForAttestation(): string{
+
+
+    const requestBody = {
+      "id": "{{id}}",
+      "nextEvent": {
+        "constructType": "skEvent",
+        "eventName": "continue",
+        "params": [],
+        "eventType": "post",
+        "postProcess": {}
+      },
+      "parameters": {
+      },
+      "eventName": "continue"
+    }
+
+
+    return
   }
 
 
