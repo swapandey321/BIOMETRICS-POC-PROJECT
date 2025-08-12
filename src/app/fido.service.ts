@@ -19,7 +19,6 @@ export class FidoService {
 
   }
 
-  SERVER_URL = "https://e0eb9dfc8a2c.ngrok-free.app";
 
   async getRegistrationOptions(username: string): Promise<any> {
 
@@ -27,7 +26,6 @@ export class FidoService {
     
     //prepare the url first
     const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=663b58f2-6203-4bfb-9473-fd3f0ce050ad';
-
     
     const options = await this.getIdFromPing(url);
 
@@ -78,9 +76,10 @@ export class FidoService {
   async sendRegistrationResult(attestationData: any) {
 
     try{
+      //prepare the url 
     const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
 
-    console.log('reuqst body')
+    console.log('request body')
     console.log(JSON.stringify(attestationData));
 
     const response = await fetch(`${url}`, {
@@ -94,12 +93,7 @@ export class FidoService {
       body: JSON.stringify(attestationData),
     });
 
-    console.log('attestation response status:', response.status, response.statusText);
-
-    // If the response is not OK, throw an error to catch it below
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    console.log('attestation response status:', response.status);
 
     const result = await response.text();
     console.log('attestation raw response body:', result); // Log the raw body
@@ -129,7 +123,6 @@ export class FidoService {
         credentialJson: registrationOptionData.registrationOptions,
       });
       console.log('result' + JSON.stringify(result));
-      console.log('result' + JSON.stringify(result.credentialJson));
       const parsedAttestation = JSON.parse(result.credentialJson)
       console.log('parsedAttestation');
       console.log(parsedAttestation);
@@ -152,7 +145,7 @@ export class FidoService {
       const registrationResponse = response.formData.value
       if(registrationResponse.success){
         console.log('✅ Registration successful');
-        //store the login preference 
+        //store the login preference and redirect the user to PSC overview page
 
       }
       
@@ -164,155 +157,79 @@ export class FidoService {
   }
 
   // Step 3: Fetch authentication options from backend
-  async getAuthenticationOptions(email: string): Promise<PublicKeyCredentialRequestOptions> {
+  async getAuthenticationOptions(username: string): Promise<any> {
 
-    if (email == undefined || email == null) {
-      this.openSnackBar('Email is needed', "close");
+    console.log('getAuthenticationOptions');
 
+    //prepare the url first
+    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=7fbb3b2c-9758-4d2d-bd33-5e86bb8f0a4b';
+
+     const options = await this.getIdFromPing(url);
+
+    //get the id and retrieve the fido challenge
+    console.log('id from getIdFromPing',JSON.parse(options).id)
+    const authenticationOptions = await this.getPingFidoChallenge(JSON.parse(options).id , username);
+
+    
+    // Parse the full JSON response
+    const responseData = JSON.parse(authenticationOptions);
+    // Navigate the nested object to find the FIDO challenge
+    const fidoChallengeInput = responseData?.form?.components?.inputs?.find(
+      (input: {key: string}) => input.key === 'fidoChallenge');
+      
+    const parsedAuthenticationOption = JSON.parse(fidoChallengeInput.value);
+
+    console.log('Raw authentication options:');
+    console.log(JSON.stringify(parsedAuthenticationOption));
+
+    const challengeBase64Url = this.toBase64Url(parsedAuthenticationOption.challenge);
+    parsedAuthenticationOption.challenge = challengeBase64Url;
+    console.log('base64 url encoded challenge'+challengeBase64Url)
+
+    //check for allow credential 
+    if (parsedAuthenticationOption.allowCredentials) {
+      parsedAuthenticationOption.allowCredentials = parsedAuthenticationOption.allowCredentials.map((cred: { id: any; }) => ({
+        ...cred,
+        id: this.toBase64Url(cred.id as any)
+      }));
     }
-    // 1. Get challenge from server
-    const initResponse = await fetch(`${this.SERVER_URL}/init-auth?email=${email}`, {
-      credentials: "include",
-      headers: {
-        "ngrok-skip-browser-warning": "true",
-        "Ngrok-Skip-Browser-Warning": "true"
-      }
-    })
-    const options = await initResponse.json()
-    if (!initResponse.ok) {
-      console.log(options.error);
-      this.openSnackBar('Error in getting user auth:', "close");
+  // Now you can access the individual WebAuthn properties
+    console.log('base64 url encoded Authentication Options:');
+    console.log(JSON.stringify(parsedAuthenticationOption));
+   
+     const authenticationOptionData = {
+       id: responseData.id,
+       authenticationOptions: parsedAuthenticationOption
+     }
 
-    }
-    console.log('getAuthenticationOptions')
-    console.log(options);
-    //const response = await firstValueFrom(responseObservable);
-    //const response = authenticationOptionData;
-
-    // Convert challenge from base64url
-    //options.challenge = this.base64urlToUint8Array(options.challenge as any);
-
-    // Convert allowCredentials.id from base64url
-    //if (options.allowCredentials) {
-    // console.log('allow creds true');
-    // options.allowCredentials = options.allowCredentials.map((cred: { id: any; }) => ({
-    //  ...cred,
-    //  id: this.base64urlToUint8Array(cred.id as any)
-    //}));
-    //}
-
-    return options;
+    return authenticationOptionData;
+    
   }
 
   // Step 4: Send authentication result to backend
-  async sendAuthenticationResult(assertion: Credential): Promise<void> {
-    ;
-    const publicKeyCredential = assertion as PublicKeyCredential;
-    console.log('publicKeyCredential' + JSON.stringify(assertion))
-    const assertionResponse = publicKeyCredential.response as AuthenticatorAssertionResponse;
-    console.log('assertionResponse' + JSON.stringify(assertionResponse));
-    console.log('clientDataJSON' + JSON.stringify(assertionResponse.clientDataJSON));
-    console.log('authenticatorData' + JSON.stringify(assertionResponse.authenticatorData));
-    console.log('signature' + JSON.stringify(assertionResponse.signature));
+  async sendAuthenticationResult(assertionData: any) {
+    
+    console.log('sendAuthenticationResult' + JSON.stringify(assertionData));
 
-    console.log("rawId bytes:", new Uint8Array(publicKeyCredential.rawId).length);
-    console.log("clientDataJSON bytes:", assertionResponse.clientDataJSON.byteLength);
-    console.log("authenticatorData bytes:", assertionResponse.authenticatorData.byteLength);
-    console.log("signature bytes:", assertionResponse.signature.byteLength);
-    console.log("userHandle bytes:", assertionResponse.userHandle?.byteLength);
+    try{
 
-    const assertionData = {
-      id: publicKeyCredential.id,
-      rawId: publicKeyCredential.rawId,
-      type: publicKeyCredential.type,
-      authenticatorAttachment: publicKeyCredential.authenticatorAttachment,
-      response: {
-        clientDataJSON: assertionResponse.clientDataJSON,
-        authenticatorData: assertionResponse.authenticatorData,
-        signature: assertionResponse.signature,
-        userHandle: assertionResponse.userHandle ? assertionResponse.userHandle : null,
-      },
-      clientExtensionResults: publicKeyCredential.getClientExtensionResults?.() ?? {},
-    };
-
-    console.log('assertionData' + assertionData);
-    // 3. Verify passkey with DB
-    const verifyResponse = await fetch(`${this.SERVER_URL}/verify-auth`, {
-      credentials: "include",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true",
-        "Ngrok-Skip-Browser-Warning": "true"
-      },
-      body: JSON.stringify(assertionData),
-    })
-
-    const verifyData = await verifyResponse.json()
-    console.log('verifyData' + JSON.stringify(verifyData));
-    if (!verifyResponse.ok) {
-      console.log(verifyData.error)
-    }
-    if (verifyData.verified) {
-      this.openSnackBar(`Successfully logged in`, "close")
-    } else {
-      this.openSnackBar(`Failed to log in`, "close")
-    }
-    //let response = await firstValueFrom(this.http.post('https://your-server.com/api/fido2/auth-response', assertionData)); // TODO response status
-  }
-
-  async authenticateWithBiometrics(username: string): Promise<void> {
-    console.log('authenticateWithBiometrics');
-    const options = await this.getAuthId();
-    console.log('authenticateWithBiometrics' + JSON.stringify(options));
-    try {
-//const assertion = await navigator.credentials.get({ publicKey: options });
-      /*const assertion = await FidoAuthPlugin.register({
-              publicKeyCredentialRequestOptions: options,
-            });*/ //--> this is for android
-      // const assertion = await FidoPluginPoc.authenticate({
-      //   publicKeyCredentialRequestOptions: options,
-      // })
-      // console.log('assertion' + JSON.stringify(assertion));
-      // const asertionJson = JSON.parse(assertion.assertionJson);
-      // console.log('asertionJson' + JSON.stringify(asertionJson))
-
-      const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
-
-      const assertion = {
-  "id": options.id,
-  "nextEvent": {
-    "constructType": "skEvent",
-    "eventName": "continue",
-    "params": [],
-    "eventType": "post",
-    "postProcess": {}
-  },
-  "parameters": {
-    "assertionValue": options.assertionData
-  },
-  "eventName": "continue"
-}
+    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
 
     console.log('reuqst body')
-    console.log(JSON.stringify(assertion));
-
+    console.log(JSON.stringify(assertionData));
 
     const response = await fetch(`${url}`, {
       method: "POST",
       // Add the Content-Type header
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Requested-With": "ping-sdk"
       },
-      body: JSON.stringify(assertion),
+      redirect: "follow",
+      body: JSON.stringify(assertionData),
     });
 
-    console.log('assertion response status:', response.status, response.statusText);
-
-    // If the response is not OK, throw an error to catch it below
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    console.log('assertion response status:', response.status);
 
     const result = await response.text();
     console.log('assertion raw response body:', result); // Log the raw body
@@ -320,13 +237,57 @@ export class FidoService {
     // Parse the full JSON response
     const responseData = JSON.parse(result);
     console.log(responseData);
+    
+    return responseData;
+    }catch(err: any){
+
+      console.log('Error in verifying assertion data', err.message);
+    }
+    
+  }
+
+  async authenticateWithBiometrics(username: string): Promise<void> {
+    console.log('authenticateWithBiometrics');
+   
+    try {
+      const authenticationOptionData = await this.getAuthenticationOptions(username);
+
+      const result = await FidoPluginPoc.authenticate({
+        publicKeyCredentialRequestOptions: authenticationOptionData.authenticationOptions
+      })
+      console.log('assertion' + JSON.stringify(result));
+      const parsedAssertion = JSON.parse(result.assertionJson);
+      console.log('asertionJson' + JSON.stringify(parsedAssertion))
+
+      const assertionData = {
+    "id": authenticationOptionData.id,
+    "eventName": "continue",
+    "parameters": {
+        "eventType": "submit",
+        "data": {
+            "formData": {
+                "assertionValue": parsedAssertion
+            }
+        }
+    }
+}
+
+    console.log('request body')
+    console.log(JSON.stringify(assertionData));
+
+    let authenticationResponse = await this.sendAuthenticationResult(assertionData);//TODO Response status code
+      
+      if(authenticationResponse.success){
+        console.log('✅ Authentication successful');
+        //redirect the user to PSC Overview screen
+      
+      }
       
     } catch (err: any) {
       console.error("WebAuthn error:", err.name, err.message);
     }
 
-
-    console.log('✅ Authentication successful');
+    
   }
 
   // Helper: Convert Base64URL string to Uint8Array
@@ -407,291 +368,7 @@ export class FidoService {
       .replace(/=+$/, '');
   }
 
-  async getId(): Promise<any>  {
-    console.log('getId called');
-
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=663b58f2-6203-4bfb-9473-fd3f0ce050ad';
-
-    try {
-      // The `await` keyword pauses execution until the fetch promise resolves.
-      const response = await fetch(url);
-      console.log('response from pingone');
-
-      // The `response` object needs to be processed to get its body content.
-      const textBody = await response.text();
-      console.log(textBody);
-      console.log('getting the id param')
-      console.log(JSON.parse(textBody).id);
-     const options =  await this.getFidoChallenge(JSON.parse(textBody).id);
-     console.log(options);
-     return options
-    } catch (error) {
-      console.error('An error occurred:', error);
-    }
-
-  }
-
-  async getFidoChallenge(id: string): Promise<any>  {
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
-    const requestBody = {
-      "id": id,
-      "nextEvent": {
-        "constructType": "skEvent",
-        "eventName": "continue",
-        "params": [],
-        "eventType": "post",
-        "postProcess": {}
-      },
-      "parameters": {
-        "username": "testuser-8-8-25",
-        "buttonType": "form-submit",
-        "buttonValue": "submit"
-      },
-      "eventName": "continue"
-    };
-    console.log('Fido challenge request body:', requestBody);
-
-    const response = await fetch(`${url}`, {
-      method: "POST",
-      // Add the Content-Type header
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log('Fido challenge response status:', response.status, response.statusText);
-
-    // If the response is not OK, throw an error to catch it below
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.text();
-    console.log('fido challenge raw response body:', result); // Log the raw body
-
-    // Parse the full JSON response
-    const responseData = JSON.parse(result);
-
-// Navigate the nested object to find the FIDO challenge
-    const fidoChallengeData = responseData.screen.properties.fidoChallenge.value;
-
-    console.log('The entire FIDO2 challenge object is:');
-    console.log(JSON.stringify(fidoChallengeData));
-
-    //base64 url encoded challengeme1z9OqpyDh-73hKzT_jW0tG_VokgIyfx2EsLG_adzI
-    // base 64 url encoded user idHOjFLgmoUY_-38-Xa57oY8vXLE0L2hIIM18lLAmID6w
-
-    const challengeBase64Url = this.toBase64Url(fidoChallengeData.challenge);
-    fidoChallengeData.challenge = challengeBase64Url;
-    console.log('base64 url encoded challenge'+challengeBase64Url)
-
-    // 2. Convert the 'user.id' byte array to a Base64URL string
-    const userIdBase64Url = this.toBase64Url(fidoChallengeData.user.id);
-    console.log('base 64 url encoded user id'+userIdBase64Url);
-    fidoChallengeData.user.id = userIdBase64Url;
-    if (fidoChallengeData.excludeCredentials) {
-      fidoChallengeData.excludeCredentials = fidoChallengeData.excludeCredentials.map((cred: { id: any; }) => ({
-        ...cred,
-        id: this.toBase64Url(cred.id as any)
-      }));
-    }
-// Now you can access the individual WebAuthn properties
-    console.log('The entire FIDO2 challenge updated object is:');
-    console.log(JSON.stringify(fidoChallengeData));
-
-
-//     const postFido = {
-//   "id": responseData.id,
-//   "nextEvent": {
-//     "constructType": "skEvent",
-//     "eventName": "continue",
-//     "params": [],
-//     "eventType": "post",
-//     "postProcess": {}
-//   },
-//   "parameters": {
-//   },
-//   "eventName": "continue"
-// }
-
-
-//     const postFidoresponse = await fetch(`${url}`, {
-//       method: "POST",
-//       // Add the Content-Type header
-//       headers: {
-//         "Content-Type": "application/json"
-//       },
-//       body: JSON.stringify(postFido),
-//     });
-
-//     console.log('attestation response status:', postFidoresponse.status, postFidoresponse.statusText);
-
-//     // If the response is not OK, throw an error to catch it below
-//     if (!postFidoresponse.ok) {
-//       throw new Error(`HTTP error! status: ${postFidoresponse.status}`);
-//     }
-
-//     const PostFidoresult = await postFidoresponse.text();
-//     console.log('attestation raw response body:', PostFidoresult); // Log the raw body
-
-//     // Parse the full JSON response
-//     const postFidoresponseData = JSON.parse(PostFidoresult);
-//     console.log(postFidoresponseData);
-
-
-    const fidoChallenge = {
-      id: responseData.id,
-      fidoChallengeData: fidoChallengeData
-    }
-
-    return fidoChallenge;
-    const pluginResponse = await FidoPluginPoc.register({
-      credentialJson: fidoChallengeData,
-    });
-    console.log('result from plugin' + JSON.stringify(pluginResponse));
-    console.log(pluginResponse);
-  }
-
-async getAuthId(): Promise<any>  {
-    console.log('getAuthId called');
-
-
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=7fbb3b2c-9758-4d2d-bd33-5e86bb8f0a4b';
-
-    try {
-      // The `await` keyword pauses execution until the fetch promise resolves.
-      const response = await fetch(url);
-      console.log('auth response from pingone');
-
-      // The `response` object needs to be processed to get its body content.
-      const textBody = await response.text();
-      console.log(textBody);
-      console.log('getting the auth id param')
-      console.log(JSON.parse(textBody).id);
-     const options =  await this.getAuthFidoChallenge(JSON.parse(textBody).id);
-     console.log(options);
-     return options
-    } catch (error) {
-      console.error('An error occurred:', error);
-    }
-
-  }
-async getAuthFidoChallenge(id: string): Promise<any>  {
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
-   
-   const requestBody = {
-    "id": id,
-    "eventName": "continue",
-    "parameters": {
-        "eventType": "submit",
-        "data": {
-            "formData": {
-                "username": "testuser-8-8-25"
-            }
-        }
-    }
-}
-
-//     const requestBody = {
-//   "id": id,
-//   "nextEvent": {
-//     "constructType": "skEvent",
-//     "eventName": "continue",
-//     "params": [],
-//     "eventType": "post",
-//     "postProcess": {}
-//   },
-//   "parameters": {
-//     "username": "testuser-8-8-25",
-//     "buttonType": "form-submit",
-//     "buttonValue": "submit"
-//   },
-//   "eventName": "continue"
-// }
-
-    console.log('Fido challenge request body:', requestBody);
-
-    const response = await fetch(`${url}`, {
-      method: "POST",
-      // Add the Content-Type header
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log('Fido challenge response status:', response.status, response.statusText);
-
-    // If the response is not OK, throw an error to catch it below
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.text();
-    console.log('fido challenge raw response body:', result); // Log the raw body
-
-    // Parse the full JSON response
-    const responseData = JSON.parse(result);
-
-// Navigate the nested object to find the FIDO challenge
-    const fidoChallengeData = responseData.screen.properties.fidoChallenge.value;
-
-    console.log('The entire FIDO2 challenge object is:');
-    console.log(JSON.stringify(fidoChallengeData));
-
-    //base64 url encoded challengeme1z9OqpyDh-73hKzT_jW0tG_VokgIyfx2EsLG_adzI
-    // base 64 url encoded user idHOjFLgmoUY_-38-Xa57oY8vXLE0L2hIIM18lLAmID6w
-
-    const challengeBase64Url = this.toBase64Url(fidoChallengeData.challenge);
-    fidoChallengeData.challenge = challengeBase64Url;
-    console.log('base64 url encoded challenge'+challengeBase64Url)
-
-    // 2. Convert the 'user.id' byte array to a Base64URL string
-    if (fidoChallengeData.allowCredentials) {
-      fidoChallengeData.allowCredentials = fidoChallengeData.allowCredentials.map((cred: { id: any; }) => ({
-        ...cred,
-        id: this.toBase64Url(cred.id as any)
-      }));
-    }
-    // const userIdBase64Url = this.toBase64Url(fidoChallengeData.user.id);
-    // console.log('base 64 url encoded user id'+userIdBase64Url);
-    //fidoChallengeData.user.id = userIdBase64Url;
-// Now you can access the individual WebAuthn properties
-    console.log('The entire FIDO2 challenge updated object is:');
-    console.log(JSON.stringify(fidoChallengeData));
-    // const publicKeyCredentialRequestOptions =                              {
-    //                          "challenge": fidoChallengeData.challenge,
-    //                          "timeout":120000,
-    //                          "rpId": responseData.screen.properties.rpid.value,
-    //                          "allowCredentials":fidoChallengeData.excludeCredentials,
-    //                          "userVerification":fidoChallengeData.authenticatorSelection.userVerification
-    //           }
-
-    //           console.log('auth request to be sent to capacitor plugin');
-              //console.log(JSON.stringify(publicKeyCredentialRequestOptions));
-
-               const assertion = await FidoPluginPoc.authenticate({
-        publicKeyCredentialRequestOptions: fidoChallengeData,
-      })
-      console.log('assertion' + JSON.stringify(assertion));
-      const asertionJson = JSON.parse(assertion.assertionJson);
-      console.log('asertionJson' + JSON.stringify(asertionJson))
-      //const parsedAssertion = JSON.parse()
-
-
-      const assertionObject = {
-      id: responseData.id,
-      assertionData: asertionJson
-    }
-  
-    return assertionObject;
-    const pluginResponse = await FidoPluginPoc.register({
-      credentialJson: fidoChallengeData,
-    });
-    console.log('result from plugin' + JSON.stringify(pluginResponse));
-    console.log(pluginResponse);
-  }
+ 
 
   async getIdFromPing(url: string): Promise<any>  {
 
