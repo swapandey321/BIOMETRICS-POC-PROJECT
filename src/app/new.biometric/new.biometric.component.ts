@@ -28,11 +28,36 @@ export class NewBiometricComponent {
     });
   }
 
-  async checkBiometricAvailibility(){
+  async checkBiometricAvailibility(): Promise<any>{
+    const isWebAuthnSupported = await FidoPluginPoc.isWebAuthnSupported();
+    console.log(isWebAuthnSupported);
     const result = await BiometricAuth.checkBiometry()
     console.log('check biometry');
-    console.log(result.isAvailable);
-    console.log(result.biometryType);
     console.log(result);
+    
+    if(result.isAvailable){
+      if(result.strongCode == 'biometryNotEnrolled' || result.strongReason?.includes('does not have any biometrics')){
+
+      return {
+        "isBiometricAvailable": false,
+        "biometryType": result.biometryType
+      }
+    }else if(result.strongCode == '' && result.strongReason == ''){
+      return {
+        "isBiometricAvailable": result.isAvailable,
+        "biometryType": result.biometryType
+      }
+
+    }
+    
+    }else{
+
+      return {
+        "isBiometricAvailable": result.isAvailable,
+        "biometryType": result.biometryType
+      }
+
+    }
+    
   }
 }
