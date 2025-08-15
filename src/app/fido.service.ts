@@ -122,6 +122,11 @@ export class FidoService {
       const result = await FidoPluginPoc.register({
         credentialJson: registrationOptionData.registrationOptions,
       });
+      if(result?.credentialJson?.biometricAttemptsFailed){
+        console.log('Biometric attempts failed');
+        //check what needs to be done for multiple biometric failures
+
+      }
       console.log('result' + JSON.stringify(result));
       const parsedAttestation = JSON.parse(result.credentialJson)
       console.log('parsedAttestation');
@@ -146,6 +151,14 @@ export class FidoService {
       if(registrationResponse.success){
         console.log('✅ Registration successful');
         //store the login preference and redirect the user to PSC overview page
+        const login_pref = {
+          "useBiometrics": true,
+          "userName": username
+        }
+        const loginPrefResp = await FidoPluginPoc.secureStorage({
+          loginPreferenceJson: login_pref
+        });
+        console.log(loginPrefResp);
 
       }
       
@@ -247,17 +260,33 @@ export class FidoService {
   }
 
   async authenticateWithBiometrics(username: string): Promise<void> {
+
     console.log('authenticateWithBiometrics');
-   
-    try {
-      const authenticationOptionData = await this.getAuthenticationOptions(username);
+    const secureStorageResponse = await FidoPluginPoc.fetchSecureStorage();
+    console.log('response from fetch secure storage');
+    console.log(JSON.stringify(secureStorageResponse));
+
+    if(secureStorageResponse.response.useBiometrics){
+      //first get the username from secure storage
+      const usernameFromStorage = secureStorageResponse.response?.username
+      
+          try {
+      const authenticationOptionData = await this.getAuthenticationOptions(usernameFromStorage);
 
       const result = await FidoPluginPoc.authenticate({
         publicKeyCredentialRequestOptions: authenticationOptionData.authenticationOptions
       })
+      console.log(result);
+      console.log(result?.assertionJson);
+      if(result?.assertionJson?.biometricAttemptsFailed){
+        console.log('Biometric attempts failed');
+        //redirect the user to login screen
+
+      }
       console.log('assertion' + JSON.stringify(result));
       const parsedAssertion = JSON.parse(result.assertionJson);
       console.log('asertionJson' + JSON.stringify(parsedAssertion))
+         
 
       const assertionData = {
     "id": authenticationOptionData.id,
@@ -287,7 +316,11 @@ export class FidoService {
       console.error("WebAuthn error:", err.name, err.message);
     }
 
-    
+    } else{
+      //user opted not to authenticate with biometric
+      //keep the user on login page
+    }
+     
   }
 
   // Helper: Convert Base64URL string to Uint8Array
