@@ -4,5 +4,6 @@ export interface FidoPluginPocPlugin {
   authenticate(options: { publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions }): Promise<{assertionJson: any}>;
   fetchSecureStorage(): Promise<{response: any}>;
   isWebAuthnSupported(): Promise<{response: any}>;
-  secureStorage(options: {verificationJson: any}): Promise<{response: any}>
+  secureStorage(options: {loginPreferenceJson: any}): Promise<{response: any}>
+
 }
