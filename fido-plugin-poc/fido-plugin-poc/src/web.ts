@@ -26,8 +26,8 @@ export class FidoPluginPocWeb extends WebPlugin implements FidoPluginPocPlugin {
     return Promise.resolve({response: undefined});
   }
 
-  secureStorage(options: { verificationJson: any }): Promise<{ response: any }> {
-    console.log('Register called from web', options.verificationJson);
+  secureStorage(options: { loginPreferenceJson: any }): Promise<{ response: any }> {
+    console.log('Register called from web', options.loginPreferenceJson);
     return Promise.resolve({response: undefined});
   }
 
