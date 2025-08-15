@@ -5,6 +5,7 @@ import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 
+import android.app.NotificationChannel;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -32,6 +33,8 @@ import androidx.credentials.exceptions.CreateCredentialException;
 import androidx.credentials.PublicKeyCredential;
 import androidx.credentials.CreatePublicKeyCredentialRequest;
 import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.exceptions.GetCredentialUnsupportedException;
+import androidx.credentials.exceptions.NoCredentialException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -112,8 +115,13 @@ System.out.print(data);
 
           @Override
           public void onError(@NonNull CreateCredentialException e) {
-
-            call.reject("Registration failed: " + e.getMessage());
+            Log.e("FidoAuthPlugin", "Biometric attempts failed", e);
+            JSObject jsResult = new JSObject();
+            jsResult.put("biometricAttemptsFailed",true);
+            JSObject response = new JSObject();
+            response.put("credentialJson",jsResult);
+            call.resolve(response);
+            //call.reject("Registration failed: " + e.getMessage());
           }
         }
       );
@@ -128,21 +136,21 @@ System.out.print(data);
 
     final String TAG = "FidoPluginPoc";
 
-    var data = call.getObject("verificationJson");
+    var data = call.getObject("loginPreferenceJson");
     if (data == null) {
       Log.d(TAG,"data");
-      Log.d(TAG, "verificationJson is null");
+      Log.d(TAG, "loginPreferenceJson is null");
 
-      call.reject("Missing server data");
+      call.reject("Missing loginPreferenceJson data");
       return;
     }
     try{
-      Log.d(TAG, "Received verificationJson: " + data.toString());
+      Log.d(TAG, "Received loginPreferenceJson: " + data.toString());
 
-      SharedPreferences preferences = getContext().getSharedPreferences("webauthn_prefs", Context.MODE_PRIVATE);
+      SharedPreferences preferences = getContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
       preferences.edit()
+        .putString("useBiometrics", data.get("useBiometrics").toString())
         .putString("username", data.get("userName").toString())
-        .putString("credentialId", data.get("id").toString())
         .apply();
 
       JSObject jsResult = new JSObject();
@@ -163,13 +171,13 @@ System.out.print(data);
     }else{Log.d("FidoAuthPlugin", "Received data: " + data.toString());}
 
     try {
-      //JSONObject requestData = new JSONObject();
-      //requestData.put("requestJson", data);
+
       GetPublicKeyCredentialOption publicKeyOption =
   new GetPublicKeyCredentialOption(data.toString());
       List<CredentialOption> options = Arrays.asList(publicKeyOption);
       GetCredentialRequest credentialRequest = new GetCredentialRequest(options);
 
+      Log.d("FidoAuthPlugin", "Preparing credential request...");
 
       credentialManager.getCredentialAsync(
         getActivity(),
@@ -180,12 +188,13 @@ System.out.print(data);
           @Override
           public void onResult(GetCredentialResponse response) {
             Credential credential = response.getCredential();
-                    Bundle bundle = credential.getData();
+
+            Bundle bundle = credential.getData();
             String assertionJson = bundle.getString("androidx.credentials.BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON");
 
             for (String key : bundle.keySet()) {
-  Log.d("CredentialBundleKey", key + ": " + bundle.get(key));
-}
+              Log.d("CredentialBundleKey", key + ": " + bundle.get(key));
+            }
 
             if (assertionJson == null) {
               call.reject("Assertion JSON is null");
@@ -199,7 +208,15 @@ System.out.print(data);
 
           @Override
           public void onError(@NonNull GetCredentialException e) {
-            call.reject("Authentication failed: " + e.getMessage());
+            Log.e("FidoAuthPlugin", "Biometric attempts failed", e);
+
+            JSObject jsResult = new JSObject();
+            jsResult.put("biometricAttemptsFailed",true);
+            JSObject response = new JSObject();
+            response.put("assertionJson",jsResult);
+            call.resolve(response);
+
+            //call.reject("Authentication failed: " + e.getMessage());
           }
         }
       );
@@ -215,19 +232,19 @@ System.out.print(data);
     JSObject jsResult = new JSObject();
     try{
 
-      SharedPreferences prefs = getContext().getSharedPreferences("webauthn_prefs", Context.MODE_PRIVATE);
+      SharedPreferences prefs = getContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
 
-      if(prefs.contains("username") && prefs.contains("credentialId")){
-        Log.d("FidoAuthPlugin", "Found Credentials: " );
-        var credentialID = prefs.getString("credentialId", null);
-        Log.d("FidoAuthPlugin", "credentialIDn: " + credentialID);
+      if(prefs.contains("useBiometrics") && prefs.contains("username")){
+        Log.d("FidoAuthPlugin", "Found loginPreference: " );
+        var useBiometrics = prefs.getString("useBiometrics", null);
+       
         var userName = prefs.getString("username", null);
         Log.d("FidoAuthPlugin", "userName: " + userName);
-        jsResult.put("credentialID", credentialID);
+        jsResult.put("useBiometrics", useBiometrics);
         jsResult.put("userName", userName);
 
       }else{
-        call.reject("Credentials not found: ");
+        call.reject("Secure storage not found: ");
       }
 
       jsResult.put("success", true);
@@ -255,19 +272,35 @@ System.out.print(data);
       executorService,
       new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
         @Override
-        public void onResult(GetCredentialResponse result) {
+        public void onResult(GetCredentialResponse getCredentialResponse) {
           Log.d("WebAuthnCheck", "CredentialManager is available");
           JSObject response = new JSObject();
           response.put("supported", true);
-          call.resolve(response);
+          JSObject result = new JSObject();
+          result.put("response",response);
+          call.resolve(result);
         }
 
         @Override
         public void onError(GetCredentialException e) {
           Log.e("WebAuthnCheck", "CredentialManager not available or failed", e);
           JSObject response = new JSObject();
-          response.put("supported", false);
-          call.resolve(response);
+          if (e instanceof GetCredentialUnsupportedException) {
+          // Device does not support WebAuthn
+            response.put("supported", false);
+
+        }else if(e instanceof NoCredentialException){
+            response.put("supported", true);
+
+          }else{
+            response.put("supported", false);
+          }
+
+          JSObject result = new JSObject();
+           result.put("response",response);
+
+          call.resolve(result);
+
         }
       }
     );
