@@ -32,6 +32,7 @@ export class AppComponent implements OnInit{
   //call authenticate using biometric on app launch
 
   async authenticateOnLaunch(){
+
     const response = await FidoPluginPoc.fetchSecureStorage();
     console.log('response from fetch secure storage');
     console.log(JSON.stringify(response));
