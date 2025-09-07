@@ -6,8 +6,7 @@ import {registrationOptionData, authenticationOptionData} from './mockResponses'
 import { MatSnackBar } from '@angular/material/snack-bar';
 import FidoAuthPlugin from './plugins/fido-auth-plugin';
 import {FidoPluginPoc, FidoPluginPocPlugin} from '../../fido-plugin-poc/fido-plugin-poc/src';
-
-
+import { CapacitorCookies, CapacitorHttp } from '@capacitor/core';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +14,7 @@ import {FidoPluginPoc, FidoPluginPocPlugin} from '../../fido-plugin-poc/fido-plu
 export class FidoService {
 
 
-  constructor(private http: HttpClient, readonly snackBar: MatSnackBar) {
+  constructor(readonly snackBar: MatSnackBar) {
 
   }
 
@@ -25,13 +24,13 @@ export class FidoService {
     console.log('getRegistrationOptions');
     
     //prepare the url first
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=663b58f2-6203-4bfb-9473-fd3f0ce050ad';
+    //const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=663b58f2-6203-4bfb-9473-fd3f0ce050ad';
     
-    const options = await this.getIdFromPing(url);
+    const options = await this.getCookie();
 
     //get the id and retrieve the fido challenge
-    console.log('id from getIdFromPing',JSON.parse(options).id)
-    const registrationOptions = await this.getPingFidoChallenge(JSON.parse(options).id , username);
+    console.log('cookie from getCookie',options)
+    const registrationOptions = await this.getRegFidoChallenge(options , username);
 
     
     // Parse the full JSON response
@@ -77,7 +76,7 @@ export class FidoService {
 
     try{
       //prepare the url 
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
+    const url = 'https://portalint.standard.com/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
 
     console.log('request body')
     console.log(JSON.stringify(attestationData));
@@ -113,7 +112,8 @@ export class FidoService {
   async registerWithBiometrics(username: string): Promise<void> {
 
     console.log('registerWithBiometrics');
-    
+    //await this.getCookie();
+        
     try {
       const registrationOptionData = await this.getRegistrationOptions(username);
 
@@ -147,8 +147,8 @@ export class FidoService {
     }
 }
       let response = await this.sendRegistrationResult(attestationData);//TODO Response status code
-      const registrationResponse = response.formData.value
-      if(registrationResponse.success){
+      //const registrationResponse = response.formData.value
+      if(response.success){
         console.log('✅ Registration successful');
         //store the login preference and redirect the user to PSC overview page
         const login_pref = {
@@ -175,13 +175,13 @@ export class FidoService {
     console.log('getAuthenticationOptions');
 
     //prepare the url first
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/as/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=7fbb3b2c-9758-4d2d-bd33-5e86bb8f0a4b';
+    const url = 'https://portalint.standard.com/po/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=e9ac6caa-12c1-4fb8-937e-7fdcc3ac7c2b';
 
-     const options = await this.getIdFromPing(url);
+    // const options = await this.getIdFromPing(url);
 
     //get the id and retrieve the fido challenge
-    console.log('id from getIdFromPing',JSON.parse(options).id)
-    const authenticationOptions = await this.getPingFidoChallenge(JSON.parse(options).id , username);
+   // console.log('id from getIdFromPing',JSON.parse(options).id)
+    const authenticationOptions = await this.getPingFidoChallenge(url);
 
     
     // Parse the full JSON response
@@ -226,35 +226,46 @@ export class FidoService {
 
     try{
 
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
+    const url = 'https://portalint.standard.com/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
 
     console.log('reuqst body')
     console.log(JSON.stringify(assertionData));
 
-    const response = await fetch(`${url}`, {
-      method: "POST",
-      // Add the Content-Type header
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "ping-sdk"
-      },
-      redirect: "follow",
-      body: JSON.stringify(assertionData),
-    });
+    // const response = await fetch(`${url}`, {
+    //   method: "POST",
+    //   // Add the Content-Type header
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     "X-Requested-With": "ping-sdk"
+    //   },
+      
+    //   body: JSON.stringify(assertionData),
+    // });
+
+      const response = await CapacitorHttp.request({
+       method: 'POST',
+       url: url,
+       headers: {
+       "Content-Type": "application/json",
+         "X-Requested-With": "ping-sdk"
+       },
+       data: JSON.stringify(assertionData),
+     });
 
     console.log('assertion response status:', response.status);
 
-    const result = await response.text();
-    console.log('assertion raw response body:', result); // Log the raw body
+    //const result = await response.text();
+    console.log('assertion raw response body:', response); // Log the raw body
 
     // Parse the full JSON response
-    const responseData = JSON.parse(result);
-    console.log(responseData);
+    //const responseData = JSON.parse(result);
+    console.log(response);
     
-    return responseData;
+    return response;
     }catch(err: any){
 
       console.log('Error in verifying assertion data', err.message);
+      return null;
     }
     
   }
@@ -262,16 +273,18 @@ export class FidoService {
   async authenticateWithBiometrics(username: string): Promise<void> {
 
     console.log('authenticateWithBiometrics');
-    const secureStorageResponse = await FidoPluginPoc.fetchSecureStorage();
+    //const secureStorageResponse = await FidoPluginPoc.fetchSecureStorage();
     console.log('response from fetch secure storage');
-    console.log(JSON.stringify(secureStorageResponse));
+    //console.log(JSON.stringify(secureStorageResponse));
 
-    if(secureStorageResponse.response.useBiometrics){
+    //if(secureStorageResponse.response.useBiometrics){
       //first get the username from secure storage
-      const usernameFromStorage = secureStorageResponse.response?.username
+      //const usernameFromStorage = secureStorageResponse.response?.username
       
           try {
-      const authenticationOptionData = await this.getAuthenticationOptions(usernameFromStorage);
+      const authenticationOptionData = await this.getAuthenticationOptions(username);
+      console.log('authenticationOptionData')
+      console.log(authenticationOptionData);
 
       const result = await FidoPluginPoc.authenticate({
         publicKeyCredentialRequestOptions: authenticationOptionData.authenticationOptions
@@ -304,9 +317,13 @@ export class FidoService {
     console.log('request body')
     console.log(JSON.stringify(assertionData));
 
-    let authenticationResponse = await this.sendAuthenticationResult(assertionData);//TODO Response status code
+    let response = await this.sendAuthenticationResult(assertionData);//TODO Response status code
+    console.log('response after calling send assertion');
+    console.log(response);
+
+    const authenticationResponse = response?.data
       
-      if(authenticationResponse.success){
+    if(authenticationResponse && authenticationResponse.success){
         console.log('✅ Authentication successful');
         //redirect the user to PSC Overview screen
       
@@ -316,10 +333,10 @@ export class FidoService {
       console.error("WebAuthn error:", err.name, err.message);
     }
 
-    } else{
+   // } else{
       //user opted not to authenticate with biometric
       //keep the user on login page
-    }
+    //}
      
   }
 
@@ -435,38 +452,130 @@ export class FidoService {
     
   }
 
-  async getPingFidoChallenge(id: string , username: string): Promise<any>{
+  async getPingFidoChallenge(url: string): Promise<any>{
 
     console.log('getPingFidoChallenge');
 
     //prepare url
-    const url = 'https://auth.pingone.com/18eba607-71f1-4365-b16a-4e2305a8798d/davinci/connections/481e952e6b11db8360587b8711620786/capabilities/customHTMLTemplate';
+    //const url = 'https://auth.pingone.com/48295941-9762-4b7a-a954-a513a3b8160b/davinci/connections/867ed4363b2bc21c860085ad2baa817d/capabilities/customHTMLTemplate';
     
-    const passInUserRequestBody= {
-    "id": id,
-    "eventName": "continue",
-    "parameters": {
-        "eventType": "submit",
-        "data": {
-            "formData": {
-                "username": username
-            }
-        }
-    }
-}
+//     const passInUserRequestBody= {
+//     "id": id,
+//     "eventName": "continue",
+//     "parameters": {
+//         "eventType": "submit",
+//         "data": {
+//             "formData": {
+//                 "username": username
+//             }
+//         }
+//     }
+// }
 
 
-    console.log('Fido challenge request body:', passInUserRequestBody);
+    //console.log('Fido challenge request body:', passInUserRequestBody);
+
+    // const response = await fetch(`${url}`, {
+    //   method: "POST",
+    //   // Add the Content-Type header
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     "X-Requested-With": "ping-sdk"
+    //   },
+    //   redirect: "follow",
+    //   body: JSON.stringify(passInUserRequestBody),
+    // });
 
     const response = await fetch(`${url}`, {
-      method: "POST",
+      method: "GET",
       // Add the Content-Type header
       headers: {
         "Content-Type": "application/json",
-        "X-Requested-With": "ping-sdk"
+        "X-Requested-With": "ping-sdk",
+
       },
-      redirect: "follow",
-      body: JSON.stringify(passInUserRequestBody),
+            
+    });
+
+    console.log('Fido challenge response status:', response.status, response.statusText);
+
+    // If the response is not OK, throw an error to catch it below
+    if (!response.ok) {
+      console.log('Failed to get Fido Challenge');
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.text();
+    console.log('fido authentication challenge raw response body:', result); // Log the raw body
+
+    return result;
+
+  }
+
+  
+  async getCookie(): Promise<any>  {
+
+    const url = 'https://loginint.standard.com/dv/session/authenticate';
+
+    console.log('getCookie()');
+
+    const loginBody = {
+    "username": "Pscuser05",
+    "password": "LoginINT$1"
+}
+
+try{
+  const response = await CapacitorHttp.request({
+  method: 'POST',
+  url: url,
+  headers: {
+    'Content-Type': 'application/json',
+    
+  },
+  data: loginBody,
+});
+
+console.log('response from cookie call');
+console.log(response);
+
+
+   const setCookieHeader = response.headers['Set-Cookie'];
+    console.log('Set-Cookie:', setCookieHeader);
+    // You can then parse it to extract the ST cookie
+   const cookieFromHeader = setCookieHeader?.split(';').find(c => c.trim().startsWith('ST='));
+   console.log('ST Cookie:', cookieFromHeader);
+
+      //const textBody = await response.text();
+     //const options =  await this.getAuthFidoChallenge(JSON.parse(textBody).id);
+    // console.log(textBody);
+     //return textBody;
+     return setCookieHeader;
+    } catch (error: any) {
+      console.error('An error occurred:', error);
+    }
+
+    
+
+    }
+
+    async getRegFidoChallenge(cookie: string , username: string): Promise<any>{
+
+    console.log('getRegFidoChallenge');
+
+    //prepare url
+    const url = 'https://portalint.standard.com/po/authorize?response_type=code&response_mode=pi.flow&scope=openid&client_id=979823d3-b1fa-4ed1-8052-205507af2593';
+    
+
+    const response = await fetch(`${url}`, {
+      method: "GET",
+      // Add the Content-Type header
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "ping-sdk",
+        
+      },
+      
+      
     });
 
     console.log('Fido challenge response status:', response.status, response.statusText);
@@ -483,6 +592,8 @@ export class FidoService {
     return result;
 
   }
+    
+  }
 
 
-}
+
