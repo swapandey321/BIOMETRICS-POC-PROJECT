@@ -7,6 +7,10 @@ import androidx.core.content.ContextCompat;
 
 import android.app.NotificationChannel;
 import android.content.Context;
+
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException;
+import androidx.security.crypto.EncryptedSharedPreferences;
+import androidx.security.crypto.MasterKey;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,6 +43,8 @@ import androidx.credentials.exceptions.NoCredentialException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -115,12 +121,24 @@ System.out.print(data);
 
           @Override
           public void onError(@NonNull CreateCredentialException e) {
-            Log.e("FidoAuthPlugin", "Biometric attempts failed", e);
-            JSObject jsResult = new JSObject();
-            jsResult.put("biometricAttemptsFailed",true);
-            JSObject response = new JSObject();
-            response.put("credentialJson",jsResult);
-            call.resolve(response);
+
+
+            if(e.getMessage()!=null && e.getMessage().contains("already registered")){
+              JSObject jsResult = new JSObject();
+              jsResult.put("userAlreadyRegistered",true);
+              JSObject response = new JSObject();
+              response.put("credentialJson",jsResult);
+              call.resolve(response);
+            }else{
+
+              Log.e("FidoAuthPlugin", "Biometric attempts failed", e);
+              JSObject jsResult = new JSObject();
+              jsResult.put("biometricAttemptsFailed",true);
+              JSObject response = new JSObject();
+              response.put("credentialJson",jsResult);
+              call.resolve(response);
+            }
+
             //call.reject("Registration failed: " + e.getMessage());
           }
         }
@@ -147,7 +165,18 @@ System.out.print(data);
     try{
       Log.d(TAG, "Received loginPreferenceJson: " + data.toString());
 
-      SharedPreferences preferences = getContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+      //SharedPreferences preferences = getContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+      MasterKey masterKey = new MasterKey.Builder(getContext())
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build();
+
+      SharedPreferences preferences = EncryptedSharedPreferences.create(
+        getContext(),
+        "login_prefs",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+      );
       preferences.edit()
         .putString("useBiometrics", data.get("useBiometrics").toString())
         .putString("username", data.get("userName").toString())
@@ -158,6 +187,10 @@ System.out.print(data);
       call.resolve(jsResult);
     }catch(JSONException jse){
       call.reject("Storage failed: " + jse.getMessage());
+    } catch (GeneralSecurityException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -232,12 +265,24 @@ System.out.print(data);
     JSObject jsResult = new JSObject();
     try{
 
-      SharedPreferences prefs = getContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+      //SharedPreferences prefs = getContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+      //Create or retrieve the MasterKey
+      MasterKey masterKey = new MasterKey.Builder(getContext())
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build();
 
-      if(prefs.contains("useBiometrics") && prefs.contains("username")){
+      // 🔐 Use EncryptedSharedPreferences instead of regular SharedPreferences
+      SharedPreferences prefs = EncryptedSharedPreferences.create(
+        getContext(),
+        "login_prefs",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+      );
+      if(prefs.contains("useBiometrics") || prefs.contains("username")){
         Log.d("FidoAuthPlugin", "Found loginPreference: " );
         var useBiometrics = prefs.getString("useBiometrics", null);
-       
+
         var userName = prefs.getString("username", null);
         Log.d("FidoAuthPlugin", "userName: " + userName);
         jsResult.put("useBiometrics", useBiometrics);
@@ -304,5 +349,33 @@ System.out.print(data);
         }
       }
     );
+  }
+
+  @PluginMethod
+  public void deleteSecureStorage(PluginCall call) {
+    final String TAG = "FidoPluginPoc";
+
+    try {
+      MasterKey masterKey = new MasterKey.Builder(getContext())
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build();
+
+      SharedPreferences preferences = EncryptedSharedPreferences.create(
+        getContext(),
+        "login_prefs",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+      );
+
+      preferences.edit().clear().apply();
+
+      JSObject jsResult = new JSObject();
+      jsResult.put("success", true);
+      call.resolve(jsResult);
+
+    } catch (GeneralSecurityException | IOException e) {
+      call.reject("Deletion failed: " + e.getMessage());
+    }
   }
 }
