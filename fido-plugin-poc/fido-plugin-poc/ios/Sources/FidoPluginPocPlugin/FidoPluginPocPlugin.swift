@@ -139,8 +139,8 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
       @objc func secureStorage(_ call: CAPPluginCall) {
           let TAG = "FidoPluginPoc"
           
-          guard let data = call.getObject("verificationJson") else {
-              print("\(TAG) secureStorage: verificationJson is null")
+          guard let data = call.getObject("loginPreferenceJson") else {
+              print("\(TAG) secureStorage: loginPreferenceJson is null")
               call.reject("Missing server data for secureStorage")
               return
           }
@@ -153,7 +153,7 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
                   return
               }
               
-              guard let credentialId = data["id"] as? String else {
+              guard let useBiometrics = data["useBiometrics"] as? String else {
                   call.reject("secureStorage: Missing 'id' (credentialId) in verificationJson")
                   return
               }
@@ -166,7 +166,7 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
                   print("\(TAG) secureStorage: Failed to convert username to Data.")
               }
 
-              if let credentialIdData = credentialId.data(using: .utf8) {
+              if let useBiometricsData = useBiometrics.data(using: .utf8) {
                   save(data: credentialIdData, service: kKeychainService, account: kCredentialIDAccount)
               } else {
                   print("\(TAG) secureStorage: Failed to convert credentialId to Data.")
@@ -187,26 +187,26 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
           do {
               // Retrieve username and credential ID from their fixed Keychain accounts
               let storedUsernameData = retrieve(service: kKeychainService, account: kUsernameAccount)
-              let storedCredentialIDData = retrieve(service: kKeychainService, account: kCredentialIDAccount)
+              let storeduseBiometricsData = retrieve(service: kKeychainService, account: kCredentialIDAccount)
               
               guard let usernameData = storedUsernameData,
-                    let credentialIDData = storedCredentialIDData else {
+                    let useBiometricsData = storeduseBiometricsData else {
                   call.reject("Credentials not found in secure storage.")
                   return
               }
               
               guard let storedUsername = String(data: usernameData, encoding: .utf8),
-                    let storedCredentialID = String(data: credentialIDData, encoding: .utf8) else {
+                    let storeduseBiometricsID = String(data: useBiometricsData, encoding: .utf8) else {
                   call.reject("Failed to decode stored credentials from secure storage.")
                   return
               }
               
               print("\(TAG) Found Credentials:")
-              print("\(TAG) credentialID: \(storedCredentialID)")
+              print("\(TAG) credentialID: \(storeduseBiometricsID)")
               print("\(TAG) userName: \(storedUsername)")
 
               let jsResult: JSObject = [
-                  "credentialID": storedCredentialID,
+                  "useBiometrics": storeduseBiometricsID,
                   "userName": storedUsername
               ]
               
