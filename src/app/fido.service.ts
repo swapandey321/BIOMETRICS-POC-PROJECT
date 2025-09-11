@@ -520,8 +520,8 @@ export class FidoService {
     console.log('getCookie()');
 
     const loginBody = {
-    "username": "Pscuser05",
-    "password": "LoginINT$1"
+    "username": "biotest01",
+    "password": "2$INTLogin"
 }
 
 try{
