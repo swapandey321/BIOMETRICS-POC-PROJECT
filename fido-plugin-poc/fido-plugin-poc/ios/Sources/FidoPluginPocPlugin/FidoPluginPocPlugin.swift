@@ -54,64 +54,69 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
     }
 
     @objc func register(_ call: CAPPluginCall) {
-        self.currentCall = call
-      print("--- register method called inside plugin---") // Added print statement
+       self.currentCall = call
+           print("--- register method called inside plugin---") // Added print statement
 
 
-        guard #available(iOS 15.0, *) else {
-            call.reject("Passkey registration requires iOS 15.0 or later.", "UNSUPPORTED_OS_VERSION")
-            return
-        }
+             guard #available(iOS 15.0, *) else {
+                 call.reject("Passkey registration requires iOS 15.0 or later.", "UNSUPPORTED_OS_VERSION")
+                 return
+             }
 
-        guard let optionsJson = call.getObject("credentialJson") else {
-            call.reject("Missing credentialJson from JavaScript.")
-            return
-        }
-      print("Register: credentialJson received: \(optionsJson)") // Print the received JSON
+             guard let optionsJson = call.getObject("credentialJson") else {
+                 call.reject("Missing credentialJson from JavaScript.")
+                 return
+             }
+           print("Register: credentialJson received: \(optionsJson)") // Print the received JSON
 
-        guard
-            let rpId = (optionsJson["rp"] as? JSObject)?["id"] as? String,
-            
-            let userIdBase64URL = (optionsJson["user"] as? JSObject)?["id"] as? String,
-            let userIdData = Data(base64Encoded: userIdBase64URL.base64URLtoBase64()),
-            let userDisplayName = (optionsJson["user"] as? JSObject)?["displayName"] as? String,
-            let challengeBase64URL = optionsJson["challenge"] as? String,
-            let challengeData = Data(base64Encoded: challengeBase64URL.base64URLtoBase64())
-        else {
-            call.reject("Invalid or missing required credentialJson parameters (rp.id, user.id, user.name, challenge).")
-            return
-        }
-      let excludeList = (optionsJson["excludeCredentials"] as? [JSObject]) ?? []
-let excludedDescriptors = excludeList.compactMap { item -> ASAuthorizationPlatformPublicKeyCredentialDescriptor? in
-    guard let idBase64URL = item["id"] as? String,
-          let idData = Data(base64Encoded: idBase64URL.base64URLtoBase64()) else {
-        return nil
-    }
-    return ASAuthorizationPlatformPublicKeyCredentialDescriptor(credentialID: idData)
-}
+             guard
+                 let rpId = (optionsJson["rp"] as? JSObject)?["id"] as? String,
+                 
+                 let userIdBase64URL = (optionsJson["user"] as? JSObject)?["id"] as? String,
+                 let userIdData = Data(base64Encoded: userIdBase64URL.base64URLtoBase64()),
+                 let userDisplayName = (optionsJson["user"] as? JSObject)?["displayName"] as? String,
+                 let challengeBase64URL = optionsJson["challenge"] as? String,
+                 let challengeData = Data(base64Encoded: challengeBase64URL.base64URLtoBase64())
+             else {
+                 call.reject("Invalid or missing required credentialJson parameters (rp.id, user.id, user.name, challenge).")
+                 return
+             }
+           let excludeList = (optionsJson["excludeCredentials"] as? [JSObject]) ?? []
+     let excludedDescriptors = excludeList.compactMap { item -> ASAuthorizationPlatformPublicKeyCredentialDescriptor? in
+         guard let idBase64URL = item["id"] as? String,
+               let idData = Data(base64Encoded: idBase64URL.base64URLtoBase64()) else {
+             return nil
+         }
+         return ASAuthorizationPlatformPublicKeyCredentialDescriptor(credentialID: idData)
+     }
 
-      print("Register: Parsed parameters:") // Print parsed parameters
-          print("  rpId: \(rpId)")
-          print("  userIdBase64URL: \(userIdBase64URL)")
-          print("  userDisplayName: \(userDisplayName)")
-          print("  challengeBase64URL: \(challengeBase64URL)")
-      
-      
-        let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: rpId)
-        let registrationRequest = platformProvider.createCredentialRegistrationRequest(
-            challenge: challengeData,
-            name: userDisplayName,
-            userID: userIdData
-        )
-      registrationRequest.excludedCredentials = excludedDescriptors
+           print("Register: Parsed parameters:") // Print parsed parameters
+               print("  rpId: \(rpId)")
+               print("  userIdBase64URL: \(userIdBase64URL)")
+               print("  userDisplayName: \(userDisplayName)")
+               print("  challengeBase64URL: \(challengeBase64URL)")
+           
+           
+             let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: rpId)
+             let registrationRequest = platformProvider.createCredentialRegistrationRequest(
+                 challenge: challengeData,
+                 name: userDisplayName,
+                 userID: userIdData
+             )
+      if #available(iOS 17.4, *) {
+        registrationRequest.excludedCredentials = excludedDescriptors
+      } else {
+        // Fallback on earlier versions
+        print("excluded credentials were introduced in iOS 17.4")
+      }
 
 
-        let authorizationController = ASAuthorizationController(authorizationRequests: [registrationRequest])
-        authorizationController.delegate = self
-        authorizationController.presentationContextProvider = self
-        self.currentAuthorizationController = authorizationController
-        authorizationController.performRequests()
-      print("Register: Performed authorization requests.")
+             let authorizationController = ASAuthorizationController(authorizationRequests: [registrationRequest])
+             authorizationController.delegate = self
+             authorizationController.presentationContextProvider = self
+             self.currentAuthorizationController = authorizationController
+             authorizationController.performRequests()
+           print("Register: Performed authorization requests.")
     }
 
     @objc func authenticate(_ call: CAPPluginCall) {
