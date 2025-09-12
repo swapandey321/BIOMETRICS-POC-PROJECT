@@ -15,7 +15,7 @@ enum Attachment: String {
 // It's good practice to use unique identifiers for your Keychain items.
 // This ensures your app's data doesn't conflict with other apps.
 // We will use the username as the Keychain account, and a specific service name.
-let kKeychainService = "com.poc.bio.app.FidoCredentials" // A unique service name for your credentials
+let kKeychainService = "com.standard.psc.app.FidoCredentials" // A unique service name for your credentials
 // Using fixed account names for "global" storage, similar to SharedPreferences
 let kUsernameAccount = "currentUserName"
 let kCredentialIDAccount = "currentCredentialID"
