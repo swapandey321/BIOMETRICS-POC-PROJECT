@@ -81,6 +81,15 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
             call.reject("Invalid or missing required credentialJson parameters (rp.id, user.id, user.name, challenge).")
             return
         }
+      let excludeList = (optionsJson["excludeCredentials"] as? [JSObject]) ?? []
+let excludedDescriptors = excludeList.compactMap { item -> ASAuthorizationPlatformPublicKeyCredentialDescriptor? in
+    guard let idBase64URL = item["id"] as? String,
+          let idData = Data(base64Encoded: idBase64URL.base64URLtoBase64()) else {
+        return nil
+    }
+    return ASAuthorizationPlatformPublicKeyCredentialDescriptor(credentialID: idData)
+}
+
       print("Register: Parsed parameters:") // Print parsed parameters
           print("  rpId: \(rpId)")
           print("  userIdBase64URL: \(userIdBase64URL)")
@@ -94,6 +103,8 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
             name: userDisplayName,
             userID: userIdData
         )
+      registrationRequest.excludedCredentials = excludedDescriptors
+
 
         let authorizationController = ASAuthorizationController(authorizationRequests: [registrationRequest])
         authorizationController.delegate = self
