@@ -277,7 +277,16 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
         if let authError = error as? ASAuthorizationError {
             switch authError.code {
             case .canceled:
-                currentCall.reject("User canceled WebAuthn flow", "USER_CANCELED")
+              let jsResult: JSObject = [
+                  "biometricAttemptsFailed": true,
+              ]
+              
+              var result = JSObject()
+              result["attestationJson"] = jsResult
+              currentCall.resolve(result)
+              // This is the most common error for user-initiated cancellation, including
+                                          // if they fail the biometric prompt and then dismiss the dialog.
+                //currentCall.reject("User canceled WebAuthn flow", "USER_CANCELED")
             case .invalidResponse:
                 currentCall.reject("Invalid WebAuthn response from system", "INVALID_RESPONSE")
             case .notHandled:
@@ -286,16 +295,39 @@ public class FidoPluginPocPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationCo
                 currentCall.reject("Unknown WebAuthn error", "UNKNOWN_ERROR")
             case .notInteractive:
                 currentCall.reject("WebAuthn flow was not interactive", "NOT_INTERACTIVE")
-            @unknown default:
+            case .matchedExcludedCredential:
+              let jsResult: JSObject = [
+                  "alreadyRegistered": true,
+              ]
+              
+              var result = JSObject()
+              result["attestationJson"] = jsResult
+              currentCall.resolve(result)
+
+            default:
                 currentCall.reject("An unexpected WebAuthn error occurred: \(authError.localizedDescription)", "UNEXPECTED_ERROR")
             }
         } else {
-            currentCall.reject("WebAuthn error: \(error.localizedDescription)", "WEB_AUTHN_ERROR")
+          print("error message printing ashutosh",error.localizedDescription)
+          
+          if error.localizedDescription.contains("At least one credential matches an entry of the excludeCredentials list") {
+            let jsResult: JSObject = [
+                "alreadyRegistered": true,
+            ]
+            
+            var result = JSObject()
+            result["attestationJson"] = jsResult
+            currentCall.resolve(result)
+                  } else {
+                      // General fallback for all other unexpected errors
+                      currentCall.reject("WebAuthn error: \(error.localizedDescription)", "WEB_AUTHN_ERROR")
+                  }
         }
 
         self.currentCall = nil
         self.currentAuthorizationController = nil
     }
+
 
     
     // MARK: - ASAuthorizationControllerPresentationContextProviding
